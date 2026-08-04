@@ -365,33 +365,6 @@ cosmetic one.
 
 ---
 
-## Limitations
-
-Prototype-grade, and worth knowing before relying on any of it.
-
-- **Signup lets the caller choose their own role**, so anyone can register as an
-  investigator and read every case. Real deployments would issue those accounts; there is
-  no admin surface here to issue them from. This is the first thing to fix.
-- **No rate limiting or lockout on login.** Passwords are hashed and errors are generic,
-  but nothing slows down repeated attempts.
-- **Tokens live in `localStorage`** and last 7 days. There is no revocation — a role
-  change only takes effect at next sign-in.
-- **Cases created before accounts existed have no owner**, so they are visible to
-  investigators only.
-- **PDF bank statements are not supported.** The OCR path opens files as images; a PDF
-  will fail. Export to CSV or text, or screenshot it.
-- **Gemini free-tier quota is small, and per model per day.** When it runs out the API
-  returns `429` with the quota name and retry delay rather than a generic error. The model
-  is pinned in `entity_extraction.py` — never use a `-latest` alias, which can silently
-  move to a model with a much smaller allowance.
-- **Extraction is model output.** It can miss entities or format them oddly. Both the
-  scorer and the frontend treat the entity object as untrusted and normalise it first.
-- **Risk scores are heuristics, not findings.** They rank cases for attention; they do not
-  establish that fraud occurred.
-- **One file per upload.** Batch upload is not implemented.
-
----
-
 ## Data policy
 
 **Synthetic and sample data only** — in code, tests, demos, and UI copy. Every phone
