@@ -7,8 +7,8 @@ each other — a WhatsApp thread, a handful of screenshots, a bank statement. Fi
 complaint means reconstructing what happened, in order, with the account numbers and UPI
 IDs written out correctly.
 
-Argus takes those files, reads them, pulls out the entities that matter, and files them
-under one case ID.
+Argus takes those files, reads them, pulls out the entities that matter, scores the case,
+and files it all under one case ID.
 
 ---
 
@@ -19,9 +19,12 @@ Upload a piece of evidence and Argus will:
 1. **Read it** — Tesseract OCR for screenshots, direct text for chat exports.
 2. **Extract entities** — phone numbers, UPI IDs, bank accounts, amounts, dates, names,
    and urgency language, via the Gemini API.
-3. **File it** — stored against a case ID, so evidence added over time accumulates into
+3. **Score it** — a rule-based fraud risk score for the case, recomputed every time
+   evidence is added.
+4. **File it** — stored against a case ID, so evidence added over time accumulates into
    one case rather than a folder of loose files.
-4. **Show it back** — a dashboard with a timeline and the extracted entities as tags.
+5. **Show it back** — a dashboard with the risk score, a timeline, and the extracted
+   entities as tags.
 
 ### Supported evidence
 
@@ -33,24 +36,34 @@ Upload a piece of evidence and Argus will:
 
 Three types, deliberately. The prototype does not claim to handle anything else.
 
+### Accounts and roles
+
+| Role | Can do |
+|---|---|
+| `user` | Create cases, upload evidence, read **only their own** cases |
+| `investigator` | Read **every** case. Cannot upload or modify anything |
+
+A case belongs to the account that created it. A case you do not own answers `404` — the
+same as a case that does not exist — so case IDs cannot be probed to discover whose they
+are.
+
 ---
 
 ## Status
 
-This is a working prototype, not a finished product. Being specific about the line:
+A working prototype, not a finished product. Being specific about the line:
 
 **Built and working**
+- Email/password accounts, JWT sessions, the two roles above
 - Upload screen — drag-and-drop, click-to-browse, or paste text
 - OCR and entity extraction pipeline
-- Persistence to MongoDB, keyed by case ID
-- Case dashboard — evidence cards, extracted entity tags, upload timeline, raw text
+- Rule-based case risk scoring, recomputed on every upload
+- Case list and case dashboard — evidence cards, entity tags, timeline, raw text
 - Landing page, light and dark themes
 
 **Designed but not built**
-- Fraud risk scoring. The landing page shows a *mock* of a scored case; nothing in the
-  backend computes a score yet, so the real dashboard does not display one. Inventing a
-  number would make the screen assert something the system does not know.
 - Missing-evidence detection — flagging gaps rather than only processing what was given.
+  The landing page shows a *mock* of this; nothing computes it yet.
 - Relationship graph across entities.
 - Generated complaint report.
 
@@ -58,7 +71,7 @@ This is a working prototype, not a finished product. Being specific about the li
 
 ## Architecture
 
-Three services. The backend is the only one the browser talks to; it calls the AI service
+Three services. The browser only ever talks to the API; the API calls the AI service
 internally.
 
 ```mermaid
@@ -70,7 +83,7 @@ flowchart LR
     G["Gemini API"]
     T["Tesseract"]
 
-    B -->|"multipart upload"| A
+    B -->|"JWT + multipart"| A
     A -->|"/ocr - images"| P
     A -->|"/extract - text"| P
     A <--> M
@@ -79,10 +92,56 @@ flowchart LR
 ```
 
 **Why the split?** OCR and model calls are Python's territory — Tesseract bindings and the
-Gemini SDK both live there. Keeping them behind their own service means the API layer stays
-a thin CRUD boundary and the slow, failure-prone work is isolated in one place.
+Gemini SDK both live there. Keeping them behind their own service means the API layer
+stays a thin CRUD and access-control boundary, and the slow, failure-prone work is
+isolated in one place.
 
 **Why Gemini rather than OpenAI?** A usable free tier. See [Limitations](#limitations).
+
+---
+
+## Risk scoring
+
+Rule-based, in one file: `backend/lib/riskScore.js`. No model involved. Every number is a
+judgement call rather than a measurement, and keeping them explicit means a score can be
+explained to the person it is about.
+
+**Per piece of evidence**
+
+| Signal | Points |
+|---|---|
+| Each suspicious keyword (`URGENT`, `OTP`, `blocked`, …) | +15 |
+| An amount over ₹10,000 | +20 |
+| An amount over ₹50,000 | +25 |
+| A phone number **and** a UPI ID together | +15 |
+
+The two amount tiers are **cumulative** — ₹75,000 clears both and scores 45 — so a larger
+sum always outranks a smaller one.
+
+**Per case**
+
+```
+case score = highest single evidence score
+           + 10 per additional piece of evidence
+           capped at 100
+```
+
+The base is the *highest* document score, not the sum. Summing would double-count
+corroboration: two ordinary documents at 60 each would total 120, cap at 100, and make
+every multi-evidence case "High risk" — which would render the corroboration bonus
+meaningless.
+
+**Bands**
+
+| Score | Label | Colour |
+|---|---|---|
+| 0–30 | Low risk | blue |
+| 31–65 | Medium risk | caution orange |
+| 66–100 | High risk | alert red |
+
+Red is reserved for the top band only — see [Design notes](#design-notes). Low is blue
+rather than green: a low score also looks exactly like an extraction that found nothing,
+and green would promise a safety the score cannot establish.
 
 ---
 
@@ -105,12 +164,23 @@ Two `.env` files, neither tracked:
 MONGO_URI=mongodb+srv://...
 PORT=5000
 AI_SERVICE_URL=http://localhost:8000
+JWT_SECRET=<a long random string>
 ```
 
 ```ini
 # ai-service/.env
 GEMINI_API_KEY=...
 ```
+
+Generate a secret with:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+```
+
+The API refuses to start without `JWT_SECRET`. That is deliberate — a hardcoded fallback
+would be worse than no auth at all, because every deployment would share a secret anyone
+reading the source could forge tokens with.
 
 ### Install
 
@@ -144,7 +214,7 @@ cd backend && node server.js
 cd frontend && npm run dev
 ```
 
-Open <http://localhost:5173>.
+Open <http://localhost:5173>, create an account, and upload something.
 
 > The frontend calls `/api/*` and Vite proxies it to `:5000`. This keeps the request
 > same-origin, which is why the API needs no CORS layer. If you serve the frontend any
@@ -154,9 +224,44 @@ Open <http://localhost:5173>.
 
 ## API
 
+All `/api/evidence` and `/api/cases` routes require `Authorization: Bearer <token>`.
+
+### Auth
+
+| Endpoint | Body | Returns |
+|---|---|---|
+| `POST /api/auth/signup` | `{ email, password, role? }` | `201` → `{ token, user }` |
+| `POST /api/auth/login` | `{ email, password }` | `200` → `{ token, user }` |
+| `GET /api/auth/me` | — | `{ user }`, or `401` if the token is stale |
+
+Passwords are bcrypt hashed and at least 8 characters. Login returns the same message for
+an unknown email and a wrong password, so the endpoint cannot be used to discover which
+addresses are registered.
+
+```bash
+curl -X POST http://localhost:5000/api/auth/signup \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"victim@example.com","password":"password123","role":"user"}'
+```
+
+### `GET /api/cases`
+
+Cases the caller may see — their own, or all of them for an investigator — newest first.
+Investigators additionally get `ownerEmail` on each row.
+
+```json
+{
+  "cases": [
+    { "caseId": "CASE-2026-0412", "riskScore": 100, "riskLabel": "High risk",
+      "evidenceCount": 1, "updatedAt": "2026-08-05T09:12:03.114Z" }
+  ]
+}
+```
+
 ### `POST /api/evidence/upload`
 
-`multipart/form-data`. Send **either** `file` or `text`, not both.
+`multipart/form-data`. Send **either** `file` or `text`, not both. Requires the `user`
+role.
 
 | Field | Required | Notes |
 |---|---|---|
@@ -165,39 +270,51 @@ Open <http://localhost:5173>.
 | `file` | either | Image for the OCR path |
 | `text` | either | Raw text, skips OCR |
 
-Returns `201` with the stored document.
+Returns `201` with the stored evidence document, and rescores the case. Uploading to a
+case ID owned by another account returns `403`, checked *before* any OCR or model call so
+it costs no quota.
 
 ```bash
 curl -X POST http://localhost:5000/api/evidence/upload \
+  -H "Authorization: Bearer $TOKEN" \
   -F "caseId=CASE-2026-0001" \
   -F "type=whatsapp" \
-  -F "text=Rahul sent Rs 25,000 to rahul.s@okhdfc on 12 Aug. URGENT: share the OTP now."
-```
-
-```json
-{
-  "_id": "...",
-  "caseId": "CASE-2026-0001",
-  "type": "whatsapp",
-  "rawText": "Rahul sent Rs 25,000 to ...",
-  "extractedEntities": {
-    "names": ["Rahul"],
-    "phone_numbers": [],
-    "upi_ids": ["rahul.s@okhdfc"],
-    "bank_accounts": [],
-    "amounts": ["Rs 25,000"],
-    "dates": ["12 Aug"],
-    "suspicious_keywords": ["URGENT", "OTP"]
-  },
-  "uploadedAt": "2026-08-04T18:01:10.991Z"
-}
+  -F "text=URGENT: account blocked. Send Rs 75,000 to scam@okicici. Call +91 98888 77777, share OTP."
 ```
 
 ### `GET /api/evidence/:caseId`
 
-Every piece of evidence on a case, oldest first. An unknown case returns `[]`, not a 404.
+The whole case. Returns `404` if the case does not exist **or** is not yours.
+
+```json
+{
+  "caseId": "CASE-2026-0001",
+  "riskScore": 100,
+  "riskLabel": "High risk",
+  "evidenceCount": 1,
+  "evidence": [
+    {
+      "_id": "...",
+      "type": "whatsapp",
+      "rawText": "URGENT: account blocked. Send Rs 75,000 to ...",
+      "extractedEntities": {
+        "names": [],
+        "phone_numbers": ["+91 98888 77777"],
+        "upi_ids": ["scam@okicici"],
+        "bank_accounts": [],
+        "amounts": ["Rs 75,000"],
+        "dates": [],
+        "suspicious_keywords": ["URGENT", "account blocked", "OTP"]
+      },
+      "uploadedAt": "2026-08-05T09:12:03.114Z"
+    }
+  ]
+}
+```
 
 ### Internal — AI service
+
+Not exposed to the browser.
 
 | Endpoint | Purpose |
 |---|---|
@@ -211,20 +328,22 @@ Every piece of evidence on a case, oldest first. An unknown case returns `[]`, n
 
 ```
 argus/
-├── frontend/               React + Vite
+├── frontend/                     React + Vite
 │   └── src/
-│       ├── pages/          Home, StartCase (/start), CaseDashboard (/case/:caseId)
-│       ├── components/     Hero, sections, nav, theme toggle
-│       ├── lib/            API client, case IDs, risk thresholds
-│       └── styles/         Design tokens, typography, shared components
-├── backend/                Express + Mongoose
-│   ├── models/Evidence.js
-│   └── routes/evidence.js
-├── ai-service/             FastAPI
-│   ├── main.py             Routes
-│   ├── ocr.py              Tesseract
-│   ├── entity_extraction.py Gemini call + error translation
-│   └── prompts.py          The extraction prompt
+│       ├── pages/                Home, Login, StartCase, CasesList, CaseDashboard
+│       ├── components/           AuthProvider, RequireAuth, hero, sections, nav
+│       ├── lib/                  api client, auth context, case IDs, risk bands
+│       └── styles/               tokens, typography, shared components
+├── backend/                      Express + Mongoose
+│   ├── lib/riskScore.js          scoring rules — the file to adjust
+│   ├── middleware/auth.js        JWT signing, requireAuth, requireRole
+│   ├── models/                   User, Case, Evidence
+│   └── routes/                   auth, cases, evidence
+├── ai-service/                   FastAPI
+│   ├── main.py                   routes
+│   ├── ocr.py                    Tesseract
+│   ├── entity_extraction.py      Gemini call + error translation
+│   └── prompts.py                the extraction prompt
 └── docs/
 ```
 
@@ -236,8 +355,8 @@ The interface is built on a locked token set in `frontend/src/styles/tokens.css`
 rules are load-bearing rather than decorative:
 
 **Red is reserved.** `--alert-*` means a confirmed fraud signal and nothing else. Form
-validation uses caution orange, missing evidence uses violet, and a risk score only earns
-red above the threshold in `lib/risk.js`. If red appears everywhere, it stops meaning
+validation and failed requests use caution orange, missing evidence uses violet, and a
+risk score only earns red in the top band. If red appears everywhere, it stops meaning
 anything in the one place it matters.
 
 **Numbers are set in monospace with `tabular-nums`.** Account numbers, UPI IDs and phone
@@ -248,16 +367,28 @@ cosmetic one.
 
 ## Limitations
 
+Prototype-grade, and worth knowing before relying on any of it.
+
+- **Signup lets the caller choose their own role**, so anyone can register as an
+  investigator and read every case. Real deployments would issue those accounts; there is
+  no admin surface here to issue them from. This is the first thing to fix.
+- **No rate limiting or lockout on login.** Passwords are hashed and errors are generic,
+  but nothing slows down repeated attempts.
+- **Tokens live in `localStorage`** and last 7 days. There is no revocation — a role
+  change only takes effect at next sign-in.
+- **Cases created before accounts existed have no owner**, so they are visible to
+  investigators only.
 - **PDF bank statements are not supported.** The OCR path opens files as images; a PDF
   will fail. Export to CSV or text, or screenshot it.
-- **Gemini free-tier quota is small and per model, per day.** When it runs out the API
+- **Gemini free-tier quota is small, and per model per day.** When it runs out the API
   returns `429` with the quota name and retry delay rather than a generic error. The model
   is pinned in `entity_extraction.py` — never use a `-latest` alias, which can silently
   move to a model with a much smaller allowance.
-- **Extraction is model output.** It can miss entities or format them oddly. The frontend
-  treats the entity object as untrusted and normalises it before rendering.
+- **Extraction is model output.** It can miss entities or format them oddly. Both the
+  scorer and the frontend treat the entity object as untrusted and normalise it first.
+- **Risk scores are heuristics, not findings.** They rank cases for attention; they do not
+  establish that fraud occurred.
 - **One file per upload.** Batch upload is not implemented.
-- **No authentication.** Anyone with a case ID can read that case.
 
 ---
 
