@@ -262,12 +262,20 @@
 /* ------------------------------------------------------------------ *
  * RISK SCALE                                                          *
  *                                                                     *
- * Red is reserved. A fraud risk score only earns it above the         *
- * high-risk threshold; everything below is caution orange.            *
- * The threshold itself lives in src/lib/risk.js — keep them in step.  *
+ * Red is reserved. A fraud risk score only earns it in the top band;  *
+ * the middle band is caution orange. The band boundaries live in      *
+ * src/lib/risk.js and backend/lib/riskScore.js — keep all three in    *
+ * step.                                                               *
+ *                                                                     *
+ * Low is blue, not green. Green would read as "you are safe", and a   *
+ * low score here only means few signals were found — which is also    *
+ * what an extraction that missed everything looks like. Blue is the   *
+ * informational colour used elsewhere for extracted data, and it      *
+ * leaves --verify for what it actually means: corroborated.           *
  * ------------------------------------------------------------------ */
 
 :root {
+  --risk-low: var(--secondary);
   --risk-elevated: var(--caution);
   --risk-high: var(--alert);
 }

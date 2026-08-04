@@ -1,12 +1,41 @@
 const express = require('express');
 const multer = require('multer');
 const Evidence = require('../models/Evidence');
+const Case = require('../models/Case');
+const { scoreCase, riskLabel } = require('../lib/riskScore');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const EVIDENCE_TYPES = ['whatsapp', 'screenshot', 'bank_statement'];
+
+/**
+ * Rescore a case from every piece of evidence currently on it and store the
+ * result, returning the saved Case document.
+ *
+ * Always a full recomputation rather than an adjustment of the previous score:
+ * the corroboration bonus depends on the number of documents and the base is
+ * the strongest of them, so neither can be updated incrementally without
+ * re-reading the set anyway. Recomputing also makes the score self-healing —
+ * a case scored under older rules is corrected the next time it is touched.
+ */
+async function recalculateCase(caseId) {
+  const evidence = await Evidence.find({ caseId });
+  const riskScore = scoreCase(evidence);
+
+  return Case.findOneAndUpdate(
+    { caseId },
+    {
+      caseId,
+      riskScore,
+      riskLabel: riskLabel(riskScore),
+      evidenceCount: evidence.length,
+      updatedAt: new Date(),
+    },
+    { new: true, upsert: true },
+  );
+}
 
 router.post('/upload', upload.single('file'), async (req, res) => {
   const { caseId, type, text } = req.body;
@@ -60,12 +89,34 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     caseId,
   });
 
+  // The new document changes both the base score and the corroboration bonus,
+  // so the case is rescored before the response goes out.
+  await recalculateCase(caseId);
+
   res.status(201).json(evidence);
 });
 
 router.get('/:caseId', async (req, res) => {
-  const evidence = await Evidence.find({ caseId: req.params.caseId }).sort({ uploadedAt: 1 });
-  res.json(evidence);
+  const { caseId } = req.params;
+  const evidence = await Evidence.find({ caseId }).sort({ uploadedAt: 1 });
+
+  // Cases uploaded before scoring existed have no Case document. Scoring them
+  // on first read backfills them rather than reporting a case as zero-risk
+  // because a row happens to be missing.
+  let caseDoc = await Case.findOne({ caseId });
+  if (!caseDoc && evidence.length > 0) {
+    caseDoc = await recalculateCase(caseId);
+  }
+
+  const riskScore = caseDoc ? caseDoc.riskScore : 0;
+
+  res.json({
+    caseId,
+    riskScore,
+    riskLabel: riskLabel(riskScore),
+    evidenceCount: evidence.length,
+    evidence,
+  });
 });
 
 module.exports = router;

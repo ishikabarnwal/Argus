@@ -13,6 +13,13 @@
   gap: 1rem 1.5rem;
 }
 
+.casehead__idrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 /* The case ID is an identifier people read back over the phone, so it is set
  * in mono rather than in the display face the other page titles use. */
 .casehead__id {

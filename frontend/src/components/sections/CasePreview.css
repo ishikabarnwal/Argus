@@ -239,19 +239,8 @@
   color: var(--text-primary);
 }
 
-/* --risk is set inline from riskColorVar(), so the threshold rule stays in
- * lib/risk.js and this file never compares a score. */
-.casemock__risk {
-  padding: 0.26rem 0.7rem;
-  border-radius: 999px;
-  font-size: var(--text-caption);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  color: var(--risk);
-  background: color-mix(in srgb, var(--risk) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--risk) 45%, transparent);
-}
+/* The score badge is .risk-badge, in styles/components.css — shared with the
+ * real case dashboard so the mock and the product cannot drift apart. */
 
 /* Type comes from .label-caps — this is the case-file field label the type
  * scale already defines. Only the spacing is local. */

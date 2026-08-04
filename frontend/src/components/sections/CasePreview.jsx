@@ -111,7 +111,7 @@ function CaseMock() {
         <div className="casemock__pane">
           <div className="casemock__head">
             <span className="casemock__case">{DEMO_CASE}</span>
-            <span className="casemock__risk" style={{ '--risk': riskColorVar(DEMO_SCORE) }}>
+            <span className="risk-badge" style={{ '--risk': riskColorVar(DEMO_SCORE) }}>
               {DEMO_SCORE} · {riskLabel(DEMO_SCORE)}
             </span>
           </div>

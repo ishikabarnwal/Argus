@@ -1,30 +1,53 @@
 /**
  * Fraud risk scoring — presentation rules.
  *
- * Red is reserved across the whole product for confirmed fraud signals.
- * A risk score therefore only earns red once it crosses the high-risk
- * threshold; everything below it is caution orange.
+ * Red is reserved across the whole product for confirmed fraud signals, so a
+ * score only earns it in the top band. Everything below is caution orange or,
+ * at the bottom, the informational blue — never green, which would promise a
+ * safety this cannot establish.
  *
- * Keep HIGH_RISK_THRESHOLD in step with the --risk-* tokens in
- * styles/tokens.css. This module is the single source of truth for the
- * rule — components should call these helpers rather than comparing
- * scores inline, so the threshold can move in one edit.
+ * The bands are duplicated in backend/lib/riskScore.js, which is authoritative:
+ * real scores and labels arrive from the API already computed. What lives here
+ * is the mapping from a score to a CSS colour, which is a front-end concern the
+ * backend has no business knowing, plus labelling for the landing page mock,
+ * which has no API behind it. Keep the boundaries in step with the backend and
+ * with the --risk-* tokens in styles/tokens.css.
  */
 
-/** Scores are 0–100. At or above this, the score is shown in alert red. */
-export const HIGH_RISK_THRESHOLD = 70
+/** Ordered low to high. The last ceiling is the top of the scale. */
+const BANDS = [
+  { ceiling: 30, level: 'low', label: 'Low risk' },
+  { ceiling: 65, level: 'medium', label: 'Medium risk' },
+  { ceiling: 100, level: 'high', label: 'High risk' },
+]
 
-/** @returns {'high' | 'elevated'} */
+/** Lowest score that earns alert red. */
+export const HIGH_RISK_THRESHOLD = BANDS[1].ceiling + 1
+
+function bandFor(score) {
+  const clamped = Math.min(Math.max(Number(score) || 0, 0), 100)
+  return BANDS.find((band) => clamped <= band.ceiling)
+}
+
+/** @returns {'low' | 'medium' | 'high'} */
 export function riskLevel(score) {
-  return score >= HIGH_RISK_THRESHOLD ? 'high' : 'elevated'
+  return bandFor(score).level
+}
+
+/** The middle band's token predates the three-band scale and is still named
+ *  --risk-elevated, so the mapping is spelled out rather than derived. */
+const COLOR_VAR = {
+  low: '--risk-low',
+  medium: '--risk-elevated',
+  high: '--risk-high',
 }
 
 /** CSS custom property carrying the colour for this score. */
 export function riskColorVar(score) {
-  return riskLevel(score) === 'high' ? 'var(--risk-high)' : 'var(--risk-elevated)'
+  return `var(${COLOR_VAR[riskLevel(score)]})`
 }
 
 /** Human-readable band, for labels and screen readers. */
 export function riskLabel(score) {
-  return riskLevel(score) === 'high' ? 'High risk' : 'Elevated risk'
+  return bandFor(score).label
 }

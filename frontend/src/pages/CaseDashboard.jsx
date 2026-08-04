@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { IconChat, IconGap, IconImage, IconStatement } from '../components/Icons'
-import { fetchCaseEvidence } from '../lib/api'
+import { fetchCase } from '../lib/api'
+import { riskColorVar } from '../lib/risk'
 import './CaseDashboard.css'
 
 /**
  * Everything the backend holds for one case.
  *
- * The homepage preview is the reference for how this should look, with one
- * honest difference: the preview shows a risk score and a "next action", and
- * nothing in the backend computes either. Inventing a number here would make
- * the screen say something the system does not actually know, so the score is
- * absent rather than faked.
+ * The homepage preview is the reference for how this should look. The risk
+ * score is now real — computed by backend/lib/riskScore.js from the entities
+ * actually extracted — so the badge here shows what the rules found rather
+ * than a fixed demo number. The preview's "next action" is still a mock, and
+ * is deliberately not reproduced.
  */
 
 const TYPE_META = {
@@ -139,7 +140,7 @@ function EvidenceCard({ item }) {
 
 export default function CaseDashboard() {
   const { caseId } = useParams()
-  const [evidence, setEvidence] = useState(null)
+  const [caseFile, setCaseFile] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -147,11 +148,11 @@ export default function CaseDashboard() {
     // and so StrictMode's double-mount in dev does not race itself.
     const controller = new AbortController()
 
-    setEvidence(null)
+    setCaseFile(null)
     setError(null)
 
-    fetchCaseEvidence(caseId, { signal: controller.signal })
-      .then(setEvidence)
+    fetchCase(caseId, { signal: controller.signal })
+      .then(setCaseFile)
       .catch((err) => {
         if (err.name !== 'AbortError') setError(err.message)
       })
@@ -159,13 +160,28 @@ export default function CaseDashboard() {
     return () => controller.abort()
   }, [caseId])
 
+  const evidence = caseFile?.evidence ?? null
+
   return (
     <section className="page">
       <div className="page__inner page__inner--wide">
         <header className="page__head casehead">
           <div>
             <p className="eyebrow label-caps">Case file</p>
-            <h1 className="casehead__id">{caseId}</h1>
+            <div className="casehead__idrow">
+              <h1 className="casehead__id">{caseId}</h1>
+              {/* Only once there is evidence: a score of 0 on an empty case
+                  means "nothing to judge", not "judged and found harmless",
+                  and a Low risk badge would state the second. */}
+              {evidence?.length > 0 && (
+                <span
+                  className="risk-badge"
+                  style={{ '--risk': riskColorVar(caseFile.riskScore) }}
+                >
+                  {caseFile.riskScore} · {caseFile.riskLabel}
+                </span>
+              )}
+            </div>
             {evidence && (
               <p className="section__lede lead casehead__count">
                 {evidence.length === 0

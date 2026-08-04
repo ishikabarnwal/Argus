@@ -85,10 +85,15 @@ export async function uploadEvidence({ caseId, type, file, text }) {
 }
 
 /**
- * GET /api/evidence/:caseId — every piece of evidence on a case, oldest
- * first. An unknown case is not an error; it is an empty array.
+ * GET /api/evidence/:caseId — the whole case:
+ *   { caseId, riskScore, riskLabel, evidenceCount, evidence: [...] }
+ * with evidence oldest first. An unknown case is not an error; it comes back
+ * scored 0 with an empty list.
+ *
+ * The score is computed and banded by the backend (backend/lib/riskScore.js),
+ * so nothing here decides what "High risk" means.
  */
-export async function fetchCaseEvidence(caseId, { signal } = {}) {
+export async function fetchCase(caseId, { signal } = {}) {
   const response = await fetch(`${API_BASE}/evidence/${encodeURIComponent(caseId)}`, { signal })
   if (!response.ok) throw await errorFrom(response)
   return response.json()

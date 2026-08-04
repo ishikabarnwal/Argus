@@ -149,6 +149,29 @@
 }
 
 /* ------------------------------------------------------------------ *
+ * Risk badge                                                          *
+ *                                                                     *
+ * Colour comes from an inline --risk set by riskColorVar(), so the     *
+ * band rule stays in lib/risk.js and nothing here compares a score.    *
+ * Shared by the landing-page mock and the real case dashboard so the   *
+ * two cannot drift apart.                                              *
+ * ------------------------------------------------------------------ */
+
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.26rem 0.7rem;
+  border-radius: 999px;
+  font-size: var(--text-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--risk);
+  background: color-mix(in srgb, var(--risk) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--risk) 45%, transparent);
+}
+
+/* ------------------------------------------------------------------ *
  * Cards                                                               *
  * ------------------------------------------------------------------ */
 
