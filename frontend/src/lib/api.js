@@ -10,6 +10,34 @@
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
 
+const TOKEN_KEY = 'argus-token'
+
+/* The token lives here rather than in the auth context because the fetch
+ * helpers below need it and the context needs them — putting it in the
+ * context would make the two modules import each other. */
+
+export function getToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setToken(token) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token)
+    else localStorage.removeItem(TOKEN_KEY)
+  } catch {
+    // Private mode / storage disabled. The session still works until reload.
+  }
+}
+
+function authHeaders() {
+  const token = getToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 /**
  * Files the OCR path cannot read.
  *
@@ -62,6 +90,49 @@ async function errorFrom(response) {
   }
 }
 
+async function postJson(path, body) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw await errorFrom(response)
+  return response.json()
+}
+
+/* ---- auth --------------------------------------------------------- */
+
+/** POST /api/auth/signup → { token, user } */
+export function signup({ email, password, role }) {
+  return postJson('/auth/signup', { email, password, role })
+}
+
+/** POST /api/auth/login → { token, user } */
+export function login({ email, password }) {
+  return postJson('/auth/login', { email, password })
+}
+
+/** GET /api/auth/me → { user }. Throws if the stored token is no longer good. */
+export async function fetchMe({ signal } = {}) {
+  const response = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders(), signal })
+  if (!response.ok) throw await errorFrom(response)
+  return response.json()
+}
+
+/* ---- cases -------------------------------------------------------- */
+
+/**
+ * GET /api/cases → { cases: [...] }. The backend decides what is in the list:
+ * a user's own cases, or every case for an investigator.
+ */
+export async function fetchCases({ signal } = {}) {
+  const response = await fetch(`${API_BASE}/cases`, { headers: authHeaders(), signal })
+  if (!response.ok) throw await errorFrom(response)
+  return response.json()
+}
+
+/* ---- evidence ----------------------------------------------------- */
+
 /**
  * POST /api/evidence/upload — multipart, with either a file or raw text.
  * Resolves to the created Evidence document.
@@ -79,7 +150,13 @@ export async function uploadEvidence({ caseId, type, file, text }) {
     body.append('text', text)
   }
 
-  const response = await fetch(`${API_BASE}/evidence/upload`, { method: 'POST', body })
+  // No Content-Type header: fetch sets it from the FormData, including the
+  // multipart boundary, which cannot be written by hand.
+  const response = await fetch(`${API_BASE}/evidence/upload`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body,
+  })
   if (!response.ok) throw await errorFrom(response)
   return response.json()
 }
@@ -87,14 +164,19 @@ export async function uploadEvidence({ caseId, type, file, text }) {
 /**
  * GET /api/evidence/:caseId — the whole case:
  *   { caseId, riskScore, riskLabel, evidenceCount, evidence: [...] }
- * with evidence oldest first. An unknown case is not an error; it comes back
- * scored 0 with an empty list.
+ * with evidence oldest first.
+ *
+ * A case you do not own answers 404 exactly as a case that does not exist
+ * does, so there is nothing here to distinguish them either.
  *
  * The score is computed and banded by the backend (backend/lib/riskScore.js),
  * so nothing here decides what "High risk" means.
  */
 export async function fetchCase(caseId, { signal } = {}) {
-  const response = await fetch(`${API_BASE}/evidence/${encodeURIComponent(caseId)}`, { signal })
+  const response = await fetch(`${API_BASE}/evidence/${encodeURIComponent(caseId)}`, {
+    headers: authHeaders(),
+    signal,
+  })
   if (!response.ok) throw await errorFrom(response)
   return response.json()
 }

@@ -1,0 +1,64 @@
+/* Sign in / create account. Reuses .card, .input, .btn, .segmented and
+ * .typecard from the shared layer; only the arrangement is local. */
+
+.login {
+  max-width: 34rem;
+}
+
+.login__form {
+  gap: 1.25rem;
+}
+
+.login__modes {
+  align-self: flex-start;
+}
+
+.login__field {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.login__label {
+  display: block;
+  padding: 0;
+  margin-bottom: 0.5rem;
+  color: var(--text-tertiary);
+}
+
+.login__note {
+  margin-top: 0.45rem;
+  color: var(--text-tertiary);
+}
+
+.login__rolegrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.7rem;
+}
+
+/* No icon on these, unlike the evidence type cards, so the label needs its
+ * own top margin rather than inheriting the icon's spacing. */
+.login__roles .typecard__label {
+  margin-top: 0;
+}
+
+.login__error {
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-small);
+  color: var(--caution);
+  background: color-mix(in srgb, var(--caution) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--caution) 45%, transparent);
+  overflow-wrap: anywhere;
+}
+
+.login__form .btn {
+  align-self: flex-start;
+}
+
+.login__form .btn[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}

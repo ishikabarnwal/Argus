@@ -11,21 +11,53 @@ import '@fontsource-variable/jetbrains-mono'
 
 import './index.css'
 import App from './App.jsx'
+import RequireAuth from './components/RequireAuth.jsx'
+import AuthProvider from './components/AuthProvider.jsx'
 import Home from './pages/Home.jsx'
+import Login from './pages/Login.jsx'
 import StartCase from './pages/StartCase.jsx'
+import CasesList from './pages/CasesList.jsx'
 import CaseDashboard from './pages/CaseDashboard.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        {/* App is the layout; these render into its outlet. */}
-        <Route element={<App />}>
-          <Route index element={<Home />} />
-          <Route path="start" element={<StartCase />} />
-          <Route path="case/:caseId" element={<CaseDashboard />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* App is the layout; these render into its outlet. */}
+          <Route element={<App />}>
+            <Route index element={<Home />} />
+            <Route path="login" element={<Login />} />
+
+            {/* Uploading is a 'user' action — investigators are read-only,
+                which the API enforces independently. */}
+            <Route
+              path="start"
+              element={
+                <RequireAuth role="user">
+                  <StartCase />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="cases"
+              element={
+                <RequireAuth>
+                  <CasesList />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="case/:caseId"
+              element={
+                <RequireAuth>
+                  <CaseDashboard />
+                </RequireAuth>
+              }
+            />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   </StrictMode>,
 )

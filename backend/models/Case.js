@@ -17,6 +17,17 @@ const caseSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  // Who the case belongs to. Written once when the case is first created and
+  // never rewritten by a later rescore.
+  //
+  // Not required, because cases created before accounts existed have no owner.
+  // Those are unreachable for any 'user' account by design — an unowned case
+  // cannot be shown to someone who might not be the victim — and remain
+  // visible to investigators, who can read everything anyway.
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
   riskScore: {
     type: Number,
     required: true,

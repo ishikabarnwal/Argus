@@ -2,11 +2,15 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const evidenceRouter = require('./routes/evidence');
+const authRouter = require('./routes/auth');
+const casesRouter = require('./routes/cases');
 
 const app = express();
 app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.use('/api/auth', authRouter);
+app.use('/api/cases', casesRouter);
 app.use('/api/evidence', evidenceRouter);
 
 // Express 5 forwards rejected promises from async route handlers here.

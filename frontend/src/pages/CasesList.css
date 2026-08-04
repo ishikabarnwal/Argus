@@ -1,0 +1,59 @@
+/* Case list. Rows reuse .card so a case reads as the same object here as it
+ * does on the dashboard. */
+
+.caseshead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+}
+
+.caselist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.caselist__row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem 1.25rem;
+  padding: 1rem 1.25rem;
+  text-decoration: none;
+}
+
+/* Case IDs are read aloud and typed back in, so they stay in mono. */
+.caselist__id {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.caselist__meta {
+  color: var(--text-tertiary);
+  overflow-wrap: anywhere;
+}
+
+.caselist__row .risk-badge {
+  justify-self: end;
+}
+
+/* The badge is the one thing that must stay on its own line when the row
+ * wraps — a score sitting beside a truncated email reads as belonging to it. */
+@media (max-width: 560px) {
+  .caselist__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .caselist__row .risk-badge {
+    justify-self: start;
+  }
+}

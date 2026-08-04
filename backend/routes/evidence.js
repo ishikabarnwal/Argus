@@ -3,6 +3,7 @@ const multer = require('multer');
 const Evidence = require('../models/Evidence');
 const Case = require('../models/Case');
 const { scoreCase, riskLabel } = require('../lib/riskScore');
+const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -20,24 +21,34 @@ const EVIDENCE_TYPES = ['whatsapp', 'screenshot', 'bank_statement'];
  * re-reading the set anyway. Recomputing also makes the score self-healing —
  * a case scored under older rules is corrected the next time it is touched.
  */
-async function recalculateCase(caseId) {
+async function recalculateCase(caseId, ownerId) {
   const evidence = await Evidence.find({ caseId });
   const riskScore = scoreCase(evidence);
 
-  return Case.findOneAndUpdate(
-    { caseId },
-    {
-      caseId,
+  const update = {
+    $set: {
       riskScore,
       riskLabel: riskLabel(riskScore),
       evidenceCount: evidence.length,
       updatedAt: new Date(),
     },
-    { new: true, upsert: true },
-  );
+  };
+
+  // $setOnInsert, not $set: ownership is decided when the case is created and
+  // must survive every later rescore untouched.
+  if (ownerId) update.$setOnInsert = { userId: ownerId };
+
+  return Case.findOneAndUpdate({ caseId }, update, { new: true, upsert: true });
 }
 
-router.post('/upload', upload.single('file'), async (req, res) => {
+/** Investigators read everything; everyone else reads only what they own. */
+function canRead(caseDoc, user) {
+  if (user.role === 'investigator') return true;
+  return Boolean(caseDoc.userId) && caseDoc.userId.toString() === user.id;
+}
+
+// Investigators are read-only, so uploading is restricted to the 'user' role.
+router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), async (req, res) => {
   const { caseId, type, text } = req.body;
 
   if (!caseId) {
@@ -48,6 +59,13 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
   if (!req.file && !text) {
     return res.status(400).json({ error: "Provide either 'file' or 'text'" });
+  }
+
+  // Checked before any OCR or model call: adding to someone else's case is
+  // refused, and there is no reason to spend a Gemini request finding that out.
+  const existingCase = await Case.findOne({ caseId });
+  if (existingCase && !canRead(existingCase, req.user)) {
+    return res.status(403).json({ error: 'That case ID belongs to another account' });
   }
 
   // Resolve to plain text first (running OCR ourselves when a file is given)
@@ -90,30 +108,31 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   });
 
   // The new document changes both the base score and the corroboration bonus,
-  // so the case is rescored before the response goes out.
-  await recalculateCase(caseId);
+  // so the case is rescored before the response goes out. On a brand new case
+  // this is also what records the owner.
+  await recalculateCase(caseId, req.user.id);
 
   res.status(201).json(evidence);
 });
 
-router.get('/:caseId', async (req, res) => {
+router.get('/:caseId', requireAuth, async (req, res) => {
   const { caseId } = req.params;
-  const evidence = await Evidence.find({ caseId }).sort({ uploadedAt: 1 });
+  const caseDoc = await Case.findOne({ caseId });
 
-  // Cases uploaded before scoring existed have no Case document. Scoring them
-  // on first read backfills them rather than reporting a case as zero-risk
-  // because a row happens to be missing.
-  let caseDoc = await Case.findOne({ caseId });
-  if (!caseDoc && evidence.length > 0) {
-    caseDoc = await recalculateCase(caseId);
+  // 404 rather than 403 when the case exists but belongs to someone else. A
+  // 403 would confirm the ID is real, which is all an attacker needs to walk
+  // the CASE-YYYY-NNNN space and learn who has filed what. "Not yours" and
+  // "not a case" are deliberately indistinguishable from outside.
+  if (!caseDoc || !canRead(caseDoc, req.user)) {
+    return res.status(404).json({ error: 'No case with that ID' });
   }
 
-  const riskScore = caseDoc ? caseDoc.riskScore : 0;
+  const evidence = await Evidence.find({ caseId }).sort({ uploadedAt: 1 });
 
   res.json({
     caseId,
-    riskScore,
-    riskLabel: riskLabel(riskScore),
+    riskScore: caseDoc.riskScore,
+    riskLabel: riskLabel(caseDoc.riskScore),
     evidenceCount: evidence.length,
     evidence,
   });
