@@ -1,0 +1,163 @@
+/* ARGUS — typography
+ *
+ * Fraunces (variable)      display  — editorial gravitas, dossier weight
+ * Inter (variable)         body     — tall x-height survives small sizes on dark
+ * JetBrains Mono (variable) data    — slashed zero, disambiguated 1/l/I
+ *
+ * The mono choice is functional, not decorative: this app renders account
+ * numbers, UPI IDs and phone numbers as primary evidence. A user misreading
+ * 0 as O in an account number is a real failure mode in a fraud report.
+ *
+ * Font files are imported in main.jsx (self-hosted via @fontsource-variable,
+ * so there is no CDN dependency at runtime).
+ */
+
+:root {
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Scale — 1.25 ratio: 12 14 16 20 25 31 39 49 61 */
+  --text-caption: 0.75rem;
+  --text-small: 0.875rem;
+  --text-body: 1rem;
+  --text-lead: 1.25rem;
+  --text-h5: 1.5625rem;
+  --text-h4: 1.9375rem;
+  --text-h3: 2.4375rem;
+  --text-h2: 3.0625rem;
+  --text-h1: 3.8125rem;
+
+  /* Fluid display sizes — interpolate between scale steps, never past them. */
+  --text-h1-fluid: clamp(2.4375rem, 1.8rem + 3.2vw, 3.8125rem);
+  --text-h2-fluid: clamp(1.9375rem, 1.55rem + 1.9vw, 3.0625rem);
+  --text-h3-fluid: clamp(1.5625rem, 1.35rem + 1.1vw, 2.4375rem);
+
+  --leading-tight: 1.05;
+  --leading-snug: 1.25;
+  --leading-normal: 1.6;
+  --leading-mono: 1.5;
+
+  --tracking-display: -0.02em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-caps: 0.08em;
+}
+
+/* ------------------------------------------------------------------ *
+ * Fraunces axis presets                                               *
+ *                                                                     *
+ * SOFT stays at 0 throughout — sharp terminals are the whole point of  *
+ * the forensic register; softening them turns the face friendly.      *
+ * WONK (angled, irregular alternates) is the character dial: on for    *
+ * the hero, off everywhere else, so the weirdness stays a one-time     *
+ * event rather than a texture.                                        *
+ * ------------------------------------------------------------------ */
+
+.display-hero {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 144, 'wght' 600, 'SOFT' 0, 'WONK' 1;
+  font-size: var(--text-h1-fluid);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+}
+
+.display-1,
+h1 {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 120, 'wght' 600, 'SOFT' 0, 'WONK' 0;
+  font-size: var(--text-h1-fluid);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+}
+
+.display-2,
+h2 {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 72, 'wght' 600, 'SOFT' 0, 'WONK' 0;
+  font-size: var(--text-h2-fluid);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-display);
+}
+
+.display-3,
+h3 {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 48, 'wght' 600, 'SOFT' 0, 'WONK' 0;
+  font-size: var(--text-h3-fluid);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* h4 and below hand over to Inter. Fraunces at small sizes loses its
+ * contrast and starts to look merely old-fashioned. */
+h4 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-h5);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+}
+
+h5 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-lead);
+  line-height: var(--leading-snug);
+}
+
+h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-body);
+  line-height: var(--leading-snug);
+}
+
+/* ------------------------------------------------------------------ *
+ * Body + data                                                         *
+ * ------------------------------------------------------------------ */
+
+.lead {
+  font-size: var(--text-lead);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+}
+
+.text-small {
+  font-size: var(--text-small);
+  line-height: var(--leading-normal);
+}
+
+.text-caption {
+  font-size: var(--text-caption);
+  line-height: var(--leading-normal);
+  color: var(--text-tertiary);
+}
+
+/* Evidence tags, column headers, case-file labels. */
+.label-caps {
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* Case IDs, timestamps, account numbers, UPI IDs, hashes. */
+.mono,
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+  font-size: var(--text-small);
+  line-height: var(--leading-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Any figure that sits in a column or updates in place. Without this,
+ * amounts jitter as digits change width. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}

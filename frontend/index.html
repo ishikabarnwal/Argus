@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Argus turns scattered cyber fraud evidence into a timeline, a relationship graph, a risk score, and a ready-to-file complaint."
+    />
+    <title>Argus — Fraud Evidence Investigation</title>
+    <script>
+      // Runs before first paint so the theme never flashes. Dark is the
+      // default identity; system preference only wins if it says light and
+      // the user hasn't chosen explicitly.
+      (function () {
+        try {
+          var stored = localStorage.getItem('argus-theme');
+          var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+          var theme = stored || (prefersLight ? 'light' : 'dark');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

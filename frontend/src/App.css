@@ -1,0 +1,174 @@
+/* ------------------------------------------------------------------ *
+ * Star field                                                          *
+ *                                                                     *
+ * Mounted once at the root and fixed to the viewport, so it sits under *
+ * every section and stays put while the page scrolls over it.         *
+ *                                                                     *
+ * z-index: -1 rather than 0 is the whole trick. A fixed element is     *
+ * positioned, so at z-index 0 it paints ABOVE the page's in-flow       *
+ * content regardless of DOM order. Negative puts it behind that        *
+ * content while still leaving it visible: body's background-color      *
+ * propagates to the canvas and is painted before any stacking layer,   *
+ * so there is no body background left in between to bury it.           *
+ * ------------------------------------------------------------------ */
+
+.stars {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.stars__layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.stars__layer--base {
+  color: var(--star);
+}
+
+.stars__layer--accent {
+  color: var(--star-accent);
+}
+
+/* The element itself is invisible. Every star in the layer is one entry in
+ * this box-shadow, drawn in the inherited currentColor — which is what makes
+ * the field follow the theme without regenerating anything. */
+.stars__dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  background: transparent;
+  transition: color 0.35s ease;
+}
+
+/* ------------------------------------------------------------------ *
+ * Topbar                                                              *
+ * ------------------------------------------------------------------ */
+
+/* A floating capsule rather than a bar welded to the top edge. Detaching it
+ * is what lets the star field run behind and around it, and it gives the
+ * glass an outside to be glass against — an edge-to-edge bar only ever shows
+ * its bottom border, which reads as a divider, not as a pane.
+ *
+ * Centred with auto margins instead of `left: 50%; translateX(-50%)`: a
+ * transform on a backdrop-filter element makes some browsers rasterise the
+ * blur on a separate layer, which shows up as a faint seam along the edge. */
+.topbar {
+  position: fixed;
+  top: var(--topbar-gap);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  /* Deliberately narrower than --content-max (72rem): pulling the capsule in
+   * off the content column is what stops it reading as a full-width bar that
+   * happens to have rounded ends. */
+  width: min(64rem, calc(100% - 2rem));
+  margin-inline: auto;
+  /* Three tracks with equal flexible sides, so the nav is centred on the
+   * viewport rather than on whatever is left over after the brand and the
+   * actions have taken their share. Each child is placed explicitly, so
+   * hiding the nav on small screens leaves its column empty instead of
+   * letting the actions slide into it. */
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: clamp(0.75rem, 2.5vw, 1.75rem);
+  height: var(--topbar-h);
+  padding-inline: clamp(0.9rem, 2.5vw, 1.4rem);
+  border-radius: 999px;
+  /* Glass over the star field. The blur is deliberately much heavier than
+   * the 12px this started at: at that radius, hero text passing underneath
+   * a 72% tint came through as a legible smeared second copy of itself. A
+   * wide blur destroys the letterforms instead of merely softening them,
+   * which is what makes the tint safe to thin out. saturate() keeps the
+   * colour behind from going grey as it blurs. */
+  background: var(--glass-bg);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  /* The lip is an inset highlight rather than a ::before hairline. On a
+   * capsule the top edge is a curve, so a straight 1px bar would overshoot
+   * the corners; an inset shadow follows the radius exactly. */
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-lip);
+}
+
+/* Without backdrop-filter there is no blur to hide anything, so the tint has
+ * to carry the whole job on its own. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topbar {
+    background: var(--bg-surface);
+  }
+}
+
+.topbar__brand {
+  grid-column: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 48, 'wght' 600, 'SOFT' 0, 'WONK' 1;
+  font-size: var(--text-lead);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.topbar__mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--secondary);
+  box-shadow: 0 0 0 4px var(--glow-secondary);
+}
+
+/* The nav owns its own appearance; placement in the bar is the bar's call. */
+.topbar .tubenav {
+  grid-column: 2;
+}
+
+.topbar__actions {
+  grid-column: 3;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.topbar__cta {
+  text-decoration: none;
+}
+
+/* Visible only once focused, so keyboard users get past the nav. */
+.skip-link {
+  position: absolute;
+  left: 50%;
+  top: -100%;
+  z-index: 20;
+  transform: translateX(-50%);
+  padding: 0.6rem 1.1rem;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--accent-fill);
+  color: var(--accent-fill-text);
+  font-size: var(--text-small);
+  font-weight: 620;
+  text-decoration: none;
+}
+
+.skip-link:focus-visible {
+  top: 0;
+}
+
+/* The nav is secondary to the brand and CTA on small screens. The grid keeps
+ * its three tracks; the middle one just collapses to nothing, leaving the
+ * brand and the actions at opposite ends of the capsule. */
+@media (max-width: 640px) {
+  .tubenav {
+    display: none;
+  }
+}

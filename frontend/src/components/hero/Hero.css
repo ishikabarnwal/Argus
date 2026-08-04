@@ -1,0 +1,101 @@
+/* Hero — static two-column layout: copy left, shield graphic right.
+ *
+ * No pinning, no scroll binding, no morphing. The section is ordinary flow
+ * content and the only motion is its fade-in. */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  /* The bar floats, so clearing it costs its height plus the gap above it. */
+  padding-block: calc(var(--topbar-h) + var(--topbar-gap) + clamp(2.5rem, 7vh, 4.5rem))
+    clamp(3rem, 8vh, 5rem);
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+/* Warm pool of light behind the graphic, echoing the lamp the whole palette
+ * is lit by. Sits under the content and never intercepts a click. */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -22%;
+  right: -10%;
+  width: min(62rem, 96%);
+  aspect-ratio: 1;
+  background: radial-gradient(circle at center, var(--glow-accent), transparent 64%);
+  pointer-events: none;
+}
+
+.hero__inner {
+  position: relative;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4rem);
+}
+
+.hero__copy {
+  max-width: 34rem;
+}
+
+.hero__copy h1 {
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.hero__sub {
+  margin-top: 1.25rem;
+  text-wrap: pretty;
+}
+
+.hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.hero__art {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------ */
+
+/* Both theme images are stacked and cross-faded on opacity rather than one
+ * <img> having its src swapped: a src swap shows a blank frame while the new
+ * file decodes on the first toggle, which is precisely the moment the
+ * transition exists to smooth over. */
+.heroshield {
+  position: relative;
+  width: 100%;
+  max-width: 40rem;
+  aspect-ratio: 1 / 1;
+}
+
+.heroshield__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: opacity 0.35s ease;
+}
+
+@media (max-width: 900px) {
+  .hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.5rem, 5vw, 2.5rem);
+  }
+
+  .hero__copy {
+    max-width: 100%;
+  }
+
+  .heroshield {
+    max-width: 26rem;
+    margin-inline: auto;
+  }
+}

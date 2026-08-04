@@ -1,0 +1,252 @@
+/* Case dashboard. The evidence cards reuse .card; everything below is the
+ * case-specific furniture around them. */
+
+.page__inner--wide {
+  max-width: var(--content-max);
+}
+
+.casehead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+}
+
+/* The case ID is an identifier people read back over the phone, so it is set
+ * in mono rather than in the display face the other page titles use. */
+.casehead__id {
+  font-family: var(--font-mono);
+  font-size: var(--text-h3-fluid);
+  font-weight: 700;
+  line-height: var(--leading-snug);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.casehead__count {
+  margin-top: 0.5rem;
+}
+
+.casesection {
+  margin-top: clamp(2rem, 5vh, 3rem);
+}
+
+.casesection__label {
+  margin-bottom: 0.9rem;
+}
+
+/* ---- states -------------------------------------------------------- */
+
+.casestate {
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+}
+
+.casestate--empty {
+  align-items: flex-start;
+  gap: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.casestate--empty strong {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+/* A failed fetch is a problem, not a fraud finding — caution, never alert. */
+.casestate--bad {
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-md);
+  color: var(--caution);
+  background: color-mix(in srgb, var(--caution) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--caution) 45%, transparent);
+  overflow-wrap: anywhere;
+}
+
+/* ---- timeline ------------------------------------------------------ */
+
+/* Scrolls rather than compresses: with enough evidence the nodes would
+ * otherwise squeeze until the dates collide. */
+.ctimeline {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  padding: 0.4rem 0.1rem 0.9rem;
+}
+
+.ctimeline__event {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1 0 7.5rem;
+  text-align: center;
+}
+
+/* The rail, drawn between consecutive nodes rather than as one line under
+ * everything, so it never sticks out past the first or last dot. */
+.ctimeline__event + .ctimeline__event::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: calc(50% + 8px);
+  width: calc(100% + 1.25rem - 16px);
+  height: 2px;
+  border-radius: 1px;
+  background: var(--border-default);
+}
+
+.ctimeline__node {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--secondary-fill);
+  box-shadow: 0 0 0 3px var(--bg-base);
+}
+
+.ctimeline__date {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.ctimeline__kind {
+  font-size: var(--text-caption);
+  line-height: 1.3;
+  color: var(--text-tertiary);
+  text-wrap: pretty;
+}
+
+/* ---- evidence cards ------------------------------------------------ */
+
+.casefiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+  align-items: start;
+}
+
+.efile__head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.efile__icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: var(--secondary);
+  background: color-mix(in srgb, var(--secondary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--secondary) 30%, transparent);
+}
+
+.efile__title {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: 650;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+.efile__time {
+  margin-top: 0.1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+}
+
+.efile__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin: 0;
+}
+
+.efile__grouplabel {
+  margin-bottom: 0.4rem;
+}
+
+.efile__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.chip {
+  padding: 0.28rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption);
+  color: var(--secondary);
+  background: color-mix(in srgb, var(--secondary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--secondary) 32%, transparent);
+  overflow-wrap: anywhere;
+}
+
+.chip--mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Urgency language — a hint worth flagging, not a confirmed finding. */
+.chip--caution {
+  color: var(--caution);
+  background: color-mix(in srgb, var(--caution) 10%, transparent);
+  border-color: color-mix(in srgb, var(--caution) 38%, transparent);
+}
+
+/* Nothing extracted — an absence, which is what gap violet is for. */
+.efile__none {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-caption);
+  line-height: 1.45;
+  text-wrap: pretty;
+  color: var(--gap);
+  background: color-mix(in srgb, var(--gap) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gap) 45%, transparent);
+}
+
+.efile__none svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+}
+
+.efile__raw summary {
+  cursor: pointer;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.efile__raw summary:hover {
+  color: var(--accent);
+}
+
+.efile__raw pre {
+  max-height: 14rem;
+  margin-top: 0.6rem;
+  padding: 0.7rem 0.8rem;
+  overflow: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-inset);
+  color: var(--text-secondary);
+  font-size: var(--text-caption);
+  /* OCR output arrives with its own line breaks and some very long lines. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

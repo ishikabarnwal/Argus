@@ -1,0 +1,293 @@
+/* ARGUS — design tokens
+ *
+ * Two layers:
+ *   1. Primitives  — raw ramps. Identical in every theme. Never used directly
+ *                    in components.
+ *   2. Semantics   — what a color *means*. These are what components consume,
+ *                    and these are what swap between dark and light.
+ *
+ * Theme is driven by a `data-theme` attribute on <html>, set before first
+ * paint by the inline script in index.html. Dark is the default identity.
+ *
+ * Palette is locked — see docs/PROJECT_NOTES.md. Gold #E8A33D is the primary accent in
+ * both themes; blue replaces the former cyan as the secondary throughout.
+ */
+
+:root {
+  /* ---------------------------------------------------------------- *
+   * 1. PRIMITIVES                                                     *
+   * ---------------------------------------------------------------- */
+
+  /* Gold — the primary accent. gold-500 is the locked brand value. */
+  --gold-100: #fbf1de;
+  --gold-200: #f6dfb6;
+  --gold-300: #f0c983;
+  --gold-400: #ecb65e;
+  --gold-500: #e8a33d;
+  --gold-600: #c4842a;
+  --gold-700: #9e681c;
+  --gold-800: #8f5e13;
+  --gold-900: #5c3b0b;
+
+  /* Blue — the secondary. blue-500 (dark) and blue-700 (light) are locked. */
+  --blue-200: #c3d7f7;
+  --blue-300: #9cbbf2;
+  --blue-400: #6c9bee;
+  --blue-500: #2e6fd9;
+  --blue-600: #2559b0;
+  --blue-700: #1e4c8c;
+  --blue-800: #16386a;
+  --blue-900: #0f2647;
+
+  /* Alert red — RESERVED. Confirmed fraud signals only. See --alert. */
+  --alert-400: #ff6b6b;
+  --alert-500: #e5484d;
+  --alert-600: #c42b31;
+
+  /* Caution orange — warnings, validation errors, sub-threshold risk.
+   * Hotter and more saturated than the brand gold so the two never read as
+   * the same signal. */
+  --caution-400: #f0883e;
+  --caution-600: #b45309;
+
+  /* Gap violet — missing / expected-but-absent evidence. */
+  --gap-400: #a78bfa;
+  --gap-600: #6941c6;
+
+  /* Verify green — confirmed, complete, corroborated. */
+  --verify-400: #5cc97a;
+  --verify-600: #1f7a4d;
+
+  /* Navy neutrals — the locked dark surfaces, plus the steps between them. */
+  --navy-950: #070b16;
+  --navy-900: #0a0f1e;
+  --navy-850: #111a2e;
+  --navy-800: #17233c;
+  --navy-700: #1f2a45;
+  --navy-600: #2c3a5c;
+  --navy-500: #3d4d72;
+  --navy-400: #545e75;
+  --navy-300: #7b8699;
+  --navy-200: #9aa5b8;
+  --navy-100: #f5f7fa;
+
+  /* Paper neutrals — the locked light surfaces. */
+  --paper-50: #ffffff;
+  --paper-100: #f7f9fc;
+  --paper-200: #eef1f7;
+  --paper-300: #e4e8f0;
+  --paper-400: #cdd4e1;
+  --paper-500: #a3abbd;
+  --paper-600: #78819a;
+  --paper-700: #5c6478;
+  --paper-900: #1b2340;
+}
+
+/* ------------------------------------------------------------------ *
+ * 2. SEMANTICS — DARK (default identity)                              *
+ * ------------------------------------------------------------------ */
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-base: var(--navy-900);
+  --bg-surface: var(--navy-850);
+  --bg-raised: var(--navy-800);
+  --bg-inset: var(--navy-950);
+
+  --border-subtle: #16203a;
+  --border-default: var(--navy-700);
+  --border-strong: var(--navy-600);
+
+  --text-primary: var(--navy-100);
+  --text-secondary: var(--navy-200);
+  --text-tertiary: var(--navy-300);
+  --text-disabled: var(--navy-400);
+
+  /* Gold reaches 8.9:1 on the dark base, so it is safe as text here. */
+  --accent: var(--gold-500);
+  --accent-hover: var(--gold-400);
+  --accent-fill: var(--gold-500);
+  --accent-fill-hover: var(--gold-400);
+  --accent-quiet: var(--gold-900);
+
+  /* Gold fills always take dark ink, in both themes. White on gold reaches
+   * only ~2.2:1; the navy base reaches 8.9:1. */
+  --accent-fill-text: var(--navy-900);
+
+  /* The locked blue (#2E6FD9) is only 4.0:1 on the dark base — fine for
+   * fills, borders and graphics, but short of 4.5:1 for body text. Text uses
+   * blue-400 (6.8:1); fills keep the locked value. */
+  --secondary: var(--blue-400);
+  --secondary-hover: var(--blue-300);
+  --secondary-fill: var(--blue-500);
+  --secondary-fill-text: #ffffff;
+  --secondary-quiet: var(--blue-800);
+
+  --alert: var(--alert-400);
+  --alert-fill: var(--alert-600);
+  --alert-fill-text: #ffffff;
+
+  --caution: var(--caution-400);
+  --gap: var(--gap-400);
+  --verify: var(--verify-400);
+
+  --focus-ring: var(--gold-400);
+
+  --glow-accent: rgba(232, 163, 61, 0.2);
+  --glow-secondary: rgba(46, 111, 217, 0.22);
+  --glow-alert: rgba(229, 72, 77, 0.22);
+
+  /* Hero star field. Mostly a cool near-white against the navy base, with the
+   * sparsest, largest layer in brand gold so the field reads as lit by the
+   * same lamp as the rest of the page rather than as generic space dust. */
+  --star: rgba(245, 247, 250, 0.55);
+  --star-accent: rgba(232, 163, 61, 0.45);
+
+  /* Glass chrome — the fixed topbar sitting over the star field.
+   *
+   * Opacity here is a two-sided compromise. Too transparent and text
+   * scrolling underneath ghosts through as a smeared second copy of itself;
+   * that was the original failure at 72% behind blur(12px). Too opaque and
+   * the field it floats over stops showing at all. The fix is to buy the
+   * transparency back with a much stronger blur rather than a thinner tint. */
+  --glass-bg: color-mix(in srgb, var(--bg-surface) 78%, transparent);
+  --glass-border: color-mix(in srgb, var(--navy-600) 85%, transparent);
+  --glass-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  /* The lit top edge of the capsule — the same lamp-above-the-surface trick
+   * the cards use, warmed rather than white so it belongs to this palette. */
+  --glass-lip: color-mix(in srgb, var(--gold-500) 22%, transparent);
+
+  /* Tubelight nav indicator. The bar itself is the locked gold fill in both
+   * themes; only the wash and the edge around it change. */
+  --tube-fill: color-mix(in srgb, var(--gold-500) 13%, transparent);
+  --tube-edge: color-mix(in srgb, var(--gold-500) 30%, transparent);
+  --tube-glow: rgba(232, 163, 61, 0.5);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.55);
+  --shadow-md: 0 4px 18px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 18px 52px rgba(0, 0, 0, 0.58);
+}
+
+/* ------------------------------------------------------------------ *
+ * 2. SEMANTICS — LIGHT                                                *
+ * ------------------------------------------------------------------ */
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg-base: var(--paper-100);
+  --bg-surface: var(--paper-50);
+  --bg-raised: var(--paper-50);
+  --bg-inset: var(--paper-200);
+
+  --border-subtle: var(--paper-200);
+  --border-default: var(--paper-300);
+  --border-strong: var(--paper-400);
+
+  --text-primary: var(--paper-900);
+  --text-secondary: var(--paper-700);
+  --text-tertiary: var(--paper-600);
+  --text-disabled: var(--paper-500);
+
+  /* The brand gold is 2.0:1 on the light background — unusable as text, and
+   * it fails even the 3:1 large-text floor. Gold TEXT on light therefore uses
+   * gold-800 (5.2:1). Gold FILLS keep the exact locked value, which is where
+   * the brand colour actually reads: buttons, badges, the active card edge. */
+  --accent: var(--gold-800);
+  --accent-hover: var(--gold-900);
+  --accent-fill: var(--gold-500);
+  --accent-fill-hover: var(--gold-600);
+  --accent-quiet: var(--gold-200);
+  --accent-fill-text: var(--paper-900);
+
+  --secondary: var(--blue-700);
+  --secondary-hover: var(--blue-800);
+  --secondary-fill: var(--blue-700);
+  --secondary-fill-text: #ffffff;
+  --secondary-quiet: var(--blue-200);
+
+  --alert: var(--alert-600);
+  --alert-fill: var(--alert-600);
+  --alert-fill-text: #ffffff;
+
+  --caution: var(--caution-600);
+  --gap: var(--gap-600);
+  --verify: var(--verify-600);
+
+  --focus-ring: var(--gold-800);
+
+  /* Glow is a dark-room effect. On paper it turns to mud, so it is dialled
+   * down to a soft tint rather than carried over. */
+  --glow-accent: rgba(232, 163, 61, 0.16);
+  --glow-secondary: rgba(30, 76, 140, 0.1);
+  --glow-alert: rgba(196, 43, 49, 0.12);
+
+  /* The star field inverts on paper: white dots would be invisible, so the
+   * base layer becomes the locked blue. The accent layer follows the same
+   * rule as gold text here — the brand gold is 2.0:1 on this background and
+   * would disappear, so it uses gold-800. */
+  --star: rgba(30, 76, 140, 0.3);
+  --star-accent: rgba(143, 94, 19, 0.32);
+
+  /* Glass on paper is the case glassmorphism usually fails: a white tint on
+   * a white page has nothing to separate it from what it sits on, so the bar
+   * dissolves instead of floating. Definition therefore comes from the edge,
+   * not the fill — a real border rather than a hairline, and an inset top
+   * highlight that reads as a lit lip. The drop shadow is what actually
+   * lifts it off the page. */
+  --glass-bg: color-mix(in srgb, var(--bg-surface) 76%, transparent);
+  --glass-border: var(--paper-300);
+  --glass-shadow: 0 10px 30px rgba(27, 35, 64, 0.13);
+  /* Plain white here. The warm lip that lifts the capsule on dark just looks
+   * like a smudge against paper. */
+  --glass-lip: rgba(255, 255, 255, 0.9);
+
+  /* The brand gold stays #E8A33D here — it is a fill, and the locked palette
+   * keeps fills exact. But gold on near-white is only 2.0:1, so a 2px bar
+   * alone would be faint. The indicator earns its visibility from the shape
+   * around it instead: a denser wash and a defined gold-600 edge, so it
+   * reads as a lit pill rather than relying on the bar. */
+  --tube-fill: color-mix(in srgb, var(--gold-500) 22%, transparent);
+  --tube-edge: color-mix(in srgb, var(--gold-600) 48%, transparent);
+  --tube-glow: rgba(196, 132, 42, 0.42);
+
+  --shadow-sm: 0 1px 2px rgba(27, 35, 64, 0.06);
+  --shadow-md: 0 4px 18px rgba(27, 35, 64, 0.08);
+  --shadow-lg: 0 18px 52px rgba(27, 35, 64, 0.12);
+}
+
+/* ------------------------------------------------------------------ *
+ * RISK SCALE                                                          *
+ *                                                                     *
+ * Red is reserved. A fraud risk score only earns it above the         *
+ * high-risk threshold; everything below is caution orange.            *
+ * The threshold itself lives in src/lib/risk.js — keep them in step.  *
+ * ------------------------------------------------------------------ */
+
+:root {
+  --risk-elevated: var(--caution);
+  --risk-high: var(--alert);
+}
+
+/* ------------------------------------------------------------------ *
+ * LAYOUT                                                              *
+ *                                                                     *
+ * The topbar is fixed, so anything pinned to the top of the viewport  *
+ * has to reserve room for it explicitly or it renders underneath.     *
+ * ------------------------------------------------------------------ */
+
+:root {
+  --topbar-h: 3.75rem;
+  /* How far the floating capsule sits below the top of the viewport. Anything
+   * that has to clear the bar needs both of these, not just the height. */
+  --topbar-gap: clamp(0.6rem, 1.6vh, 1.1rem);
+
+  --radius-sm: 3px;
+  --radius-md: 7px;
+  --radius-lg: 12px;
+
+  --content-max: 72rem;
+  --section-pad: clamp(4.5rem, 11vh, 8rem);
+}

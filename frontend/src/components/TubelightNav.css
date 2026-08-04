@@ -1,0 +1,74 @@
+/* Tubelight nav — a lit pill that slides between items.
+ *
+ * Colour comes entirely from --tube-* in tokens.css, which is where the
+ * light/dark difference is resolved. Nothing here is theme-aware. */
+
+.tubenav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.tubenav__item {
+  position: relative;
+  padding: 0.5rem 1.15rem;
+  border-radius: 999px;
+  /* Overrides the global gold link colour — an unlit item is quiet, and the
+   * accent is what the lamp gives it. */
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+
+.tubenav__item:hover,
+.tubenav__item:focus-visible,
+.tubenav__item[aria-current] {
+  color: var(--accent);
+}
+
+/* The lit pill. Its edge is what carries the shape in light mode, where a
+ * translucent gold wash on white has very little to say on its own. */
+.tubenav__lamp {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--tube-fill);
+  box-shadow: inset 0 0 0 1px var(--tube-edge);
+}
+
+/* The tube itself, lying along the bottom edge of the pill and throwing its
+ * light upward into the label. */
+.tubenav__beam {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  width: 2.25rem;
+  height: 2px;
+  margin-left: -1.125rem;
+  border-radius: 999px 999px 0 0;
+  background: var(--accent-fill);
+  box-shadow: 0 0 8px 1px var(--tube-glow), 0 0 22px 5px var(--tube-glow);
+}
+
+/* The cone of light above the tube. The reference stacks three separately
+ * blurred blobs to get this; one blurred ellipse is the same picture. */
+.tubenav__beam::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 3.5rem;
+  height: 1.6rem;
+  margin-left: -1.75rem;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at bottom, var(--tube-glow), transparent 70%);
+  filter: blur(5px);
+}
+
+/* Positioned so it paints above the lamp without needing a z-index. */
+.tubenav__label {
+  position: relative;
+}

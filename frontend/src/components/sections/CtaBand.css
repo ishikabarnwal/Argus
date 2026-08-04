@@ -1,0 +1,39 @@
+.cta-band {
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* The lamp again — a warm pool of light rising from the bottom of the band,
+ * matching the hero's haze so the page closes on the note it opened with. */
+.cta-band::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -60%;
+  width: min(90rem, 160%);
+  aspect-ratio: 2 / 1;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, var(--glow-accent), transparent 68%);
+  pointer-events: none;
+}
+
+.cta-band__inner {
+  position: relative;
+  max-width: 44rem;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.cta-band__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.cta-band__note {
+  margin-top: 1.5rem;
+  color: var(--text-tertiary);
+}
