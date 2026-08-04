@@ -9,8 +9,9 @@
  * Theme is driven by a `data-theme` attribute on <html>, set before first
  * paint by the inline script in index.html. Dark is the default identity.
  *
- * Palette is locked — see docs/PROJECT_NOTES.md. Gold #E8A33D is the primary accent in
- * both themes; blue replaces the former cyan as the secondary throughout.
+ * Palette is locked — see docs/PROJECT_NOTES.md. Gold #E8A33D is the primary
+ * accent in both themes; blue replaces the former cyan as the secondary
+ * throughout.
  */
 
 :root {
