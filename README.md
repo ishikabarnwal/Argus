@@ -2,13 +2,9 @@
 
 **Cyber fraud evidence, organised.**
 
-Victims of online fraud end up with evidence scattered across places that do not talk to
-each other — a WhatsApp thread, a handful of screenshots, a bank statement. Filing a
-complaint means reconstructing what happened, in order, with the account numbers and UPI
-IDs written out correctly.
-
-Argus takes those files, reads them, pulls out the entities that matter, scores the case,
-and files it all under one case ID.
+Victims of online fraud end up with evidence scattered across a WhatsApp thread, a handful
+of screenshots and a bank statement. Argus reads those files, pulls out the entities that
+matter, and turns them into one case file you can take to a complaint.
 
 ## Live
 
@@ -18,630 +14,137 @@ and files it all under one case ID.
 | **API** | <https://argus-backend-rgm6.onrender.com> |
 | **AI service** | <https://argus-ai-service.onrender.com> |
 
-All on free tiers, so the first request after an idle period can take up to a minute while
-the services wake. Sign up with anything — it is a prototype, and the data rule below is
-not decorative.
+Free hosting — the first request after an idle spell takes a minute while the services wake.
 
 ---
 
 ## What it does
 
-Upload a piece of evidence and Argus will:
+Upload a piece of evidence, and Argus will:
 
-1. **Read it** — Tesseract OCR for screenshots, direct text for chat exports.
-2. **Extract entities** — phone numbers, UPI IDs, bank accounts, amounts, dates, names,
-   and urgency language, via the Gemini API.
-3. **Score it** — a rule-based fraud risk score for the case, recomputed every time
-   evidence is added.
-4. **File it** — stored against a case ID, so evidence added over time accumulates into
-   one case rather than a folder of loose files.
-5. **Flag what is missing** — the evidence type the case still needs, given what its
-   entities imply.
-6. **Show it back** — a dashboard with the risk score, the gaps, a timeline, and the
-   extracted entities as tags.
-7. **Hand it over** — a PDF report of the whole case, to take to a complaint.
+- **Read it** — Tesseract OCR for screenshots, the text layer for PDFs, direct text for chat exports
+- **Extract entities** — names, phone numbers, UPI IDs, bank accounts, amounts, dates and urgency language, via Gemini
+- **Score it** — a rule-based fraud risk score out of 100, recomputed on every upload
+- **Flag what is missing** — the evidence type the case still needs, given what it found
+- **Map it** — a graph of which entities turn up together across evidence
+- **Report it** — the whole case as a downloadable PDF
+
+Evidence accumulates under one case ID, and the original files are kept, not just the text
+read out of them.
 
 ### Supported evidence
 
-| Type | Format | How it is read |
-|---|---|---|
-| WhatsApp export | `.txt` from *Export chat* | Read directly as text |
-| Screenshot | PNG / JPG | Tesseract OCR |
-| Bank statement | `.pdf`, `.txt` / `.csv`, or a screenshot | PDF text layer, text directly, or OCR |
+| Type | Format |
+|---|---|
+| WhatsApp export | `.txt` from *Export chat* |
+| Screenshot | PNG / JPG |
+| Bank statement | `.pdf`, `.csv`, `.txt`, or a screenshot |
 
 Three types, deliberately. The prototype does not claim to handle anything else.
 
-A PDF is read through its own text layer rather than OCR'd — a statement exported from a
-bank is laid-out text, not a picture of text, and rasterising it would turn exact account
-numbers into guessed ones. A scanned PDF has no text layer and so comes back empty.
+### Accounts
 
-The original file is kept as well as the text it produced, and linked from the evidence
-card. OCR misreads digits often enough that the original is sometimes the only way to
-settle what a number really was.
-
-### Accounts and roles
-
-| Role | Can do |
-|---|---|
-| `user` | Create cases, upload evidence, read **only their own** cases |
-| `investigator` | Read **every** case. Cannot upload or modify anything |
-
-A case belongs to the account that created it. A case you do not own answers `404` — the
-same as a case that does not exist — so case IDs cannot be probed to discover whose they
-are.
-
-**Signup always creates a `user`.** An investigator reads every case in the system, so the
-role is granted rather than claimed — a `role` in the signup body is ignored. There is no
-admin surface to grant one from, so it is a database edit:
-
-```js
-// mongosh, against the Argus database
-db.users.updateOne({ email: 'reviewer@example.com' }, { $set: { role: 'investigator' } })
-```
-
-The role is signed into the token, so it applies from that account's next sign-in.
+Two roles. A **user** owns the cases they create; an **investigator** can read every case
+but upload nothing. Signup always creates a user — investigator is granted in the database,
+not claimed on a form. A case you do not own is indistinguishable from one that does not
+exist.
 
 ---
 
-## Status
+## Stack
 
-A working prototype, not a finished product. Being specific about the line:
+React + Vite · Node + Express + Mongoose · Python + FastAPI · MongoDB Atlas · Cloudinary ·
+Gemini · Tesseract
 
-**Built and working**
-- Email/password accounts, JWT sessions, the two roles above
-- Upload screen — drag-and-drop, click-to-browse, or paste text
-- OCR, PDF text extraction, and the entity extraction pipeline
-- Original uploads stored on Cloudinary and linked from the evidence card
-- Rule-based case risk scoring, recomputed on every upload
-- Missing-evidence detection — three rules, surfaced on the dashboard in gap violet
-- Relationship graph — which entities turn up together, and which recur across evidence
-- Case list and case dashboard — evidence cards, entity tags, timeline, raw text
-- PDF case report — score, entities, gaps and a suggested next step, downloadable
-- Landing page, light and dark themes
-
-**Designed but not built**
-- Reading scanned PDFs. Only the text layer is used; a PDF of photographed pages is not
-  OCR'd.
-- Automated tests.
-
----
-
-## Architecture
-
-Three services. The browser only ever talks to the API; the API calls the AI service
-internally.
+The browser only ever talks to the API; the API calls the AI service internally. OCR and
+model calls live in Python because that is where Tesseract and the Gemini SDK are, which
+keeps the slow, failure-prone work in one place.
 
 ```mermaid
 flowchart LR
-    B["Browser<br/>React + Vite<br/>:5173"]
-    A["API<br/>Express + Mongoose<br/>:5000"]
-    P["AI service<br/>FastAPI<br/>:8000"]
-    M[("MongoDB Atlas")]
-    G["Gemini API"]
+    B["Browser<br/>React · :5173"]
+    A["API<br/>Express · :5000"]
+    P["AI service<br/>FastAPI · :8000"]
+    M[("MongoDB")]
+    C[("Cloudinary")]
+    G["Gemini"]
     T["Tesseract"]
 
     B -->|"JWT + multipart"| A
-    A -->|"/ocr - images"| P
-    A -->|"/extract - text"| P
+    A -->|"/ocr · /extract"| P
     A <--> M
+    A --> C
     P --> T
     P --> G
 ```
 
-**Why the split?** OCR and model calls are Python's territory — Tesseract bindings and the
-Gemini SDK both live there. Keeping them behind their own service means the API layer
-stays a thin CRUD and access-control boundary, and the slow, failure-prone work is
-isolated in one place.
-
-**Why Gemini rather than OpenAI?** A usable free tier. The quota is small and per model
-per day; the model is pinned in `ai-service/entity_extraction.py` and must never be a
-`-latest` alias, which can silently move to a model with a much smaller allowance.
-
 ---
 
-## Risk scoring
+## Running locally
 
-Rule-based, in one file: `backend/lib/riskScore.js`. No model involved. Every number is a
-judgement call rather than a measurement, and keeping them explicit means a score can be
-explained to the person it is about.
-
-**Per piece of evidence**
-
-| Signal | Points |
-|---|---|
-| Each suspicious keyword (`URGENT`, `OTP`, `blocked`, …) | +15 |
-| An amount over ₹10,000 | +20 |
-| An amount over ₹50,000 | +25 |
-| A phone number **and** a UPI ID together | +15 |
-
-The two amount tiers are **cumulative** — ₹75,000 clears both and scores 45 — so a larger
-sum always outranks a smaller one.
-
-**Per case**
-
-```
-case score = highest single evidence score
-           + 10 per additional piece of evidence
-           capped at 100
-```
-
-The base is the *highest* document score, not the sum. Summing would double-count
-corroboration: two ordinary documents at 60 each would total 120, cap at 100, and make
-every multi-evidence case "High risk" — which would render the corroboration bonus
-meaningless.
-
-**Bands**
-
-| Score | Label | Colour |
-|---|---|---|
-| 0–30 | Low risk | blue |
-| 31–65 | Medium risk | caution orange |
-| 66–100 | High risk | alert red |
-
-Red is reserved for the top band only — see [Design notes](#design-notes). Low is blue
-rather than green: a low score also looks exactly like an extraction that found nothing,
-and green would promise a safety the score cannot establish.
-
----
-
-## Missing evidence
-
-Rule-based as well, in `backend/lib/gaps.js`. Every rule has the same shape: an entity
-turned up somewhere on the case, and the evidence type that would corroborate it was never
-uploaded.
-
-| Found in the evidence | Missing | What it means |
-|---|---|---|
-| Amounts | Bank statement | Money is named, nothing shows it moving |
-| UPI IDs | Screenshot | A payment handle with no picture of the transfer |
-| Phone numbers | WhatsApp export | A contact number with no conversation behind it |
-
-Three rules, one per supported evidence type. That is a scope rule rather than a
-coincidence: a gap can only name something Argus can actually accept, or it would be
-telling a victim to find a file the upload screen would then refuse.
-
-Derived on every read rather than stored — unlike the score there is no number that needs
-to stay stable between uploads. They are drawn in gap violet, never red: "you have not
-uploaded a bank statement" is an absence, not a confirmed fraud signal.
-
-**They inherit every miss the extraction made.** An amount the model did not pick up is an
-amount that cannot be flagged as unsupported, so a case with no gaps is not a case with
-nothing missing.
-
----
-
-## Relationship graph
-
-`backend/lib/graph.js`, returned on `GET /api/evidence/:caseId` as `{ nodes, edges }` and
-drawn on the case dashboard.
-
-One rule: **two entities are connected when they appear in the same piece of evidence.**
-Nothing is inferred that the evidence does not literally contain. What that surfaces is
-corroboration — a node's `evidenceCount` is how many documents it turned up in, and an
-edge's `weight` is how many held the pair together. A UPI ID with a count of 2 is the same
-handle reached two ways.
-
-Nodes are names, phone numbers, UPI IDs, bank accounts and amounts. Dates and urgency
-keywords are deliberately excluded: nearly every document has both, so they would connect
-to everything and say nothing.
-
-**Matching is normalised, display is not.** A chat saying `Rs 45,000` and a statement line
-reading `45000.00` are the same payment, and comparing raw text would miss the single most
-useful link on the case. So amounts are matched by value, names and UPI IDs case- and
-space-insensitively, and phone numbers on their last ten digits — while every node is
-still labelled exactly as it was written.
-
-| Group | Colour | Types |
-|---|---|---|
-| Person | blue | Names |
-| Handle | gold | Phone numbers, UPI IDs, bank accounts |
-| Money | green | Amounts |
-
-Three colours rather than one per type, and the count is forced: red is reserved for
-confirmed fraud, caution orange is indistinguishable from the brand gold at mark size, and
-gap violet already means "missing evidence" on the same screen. The exact steps were
-chosen by running every pair through a colour-blindness check rather than by eye — near
-neighbours in the palette fail it. Type within a group is carried by mark shape, so
-identity never rests on colour alone.
-
----
-
-## Getting started
-
-### Prerequisites
-
-- Node.js 20+
-- Python 3.11+
-- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) on your `PATH`
-- A MongoDB connection string (Atlas free tier is fine)
-- A [Gemini API key](https://aistudio.google.com/apikey)
-
-### Configuration
-
-Two `.env` files, neither tracked:
+Needs Node 20+, Python 3.11+, Tesseract on your `PATH`, a MongoDB connection string and a
+[Gemini API key](https://aistudio.google.com/apikey).
 
 ```ini
 # backend/.env
 MONGO_URI=mongodb+srv://...
-PORT=5000
-AI_SERVICE_URL=http://localhost:8000
 JWT_SECRET=<a long random string>
-CORS_ORIGINS=https://theargus.vercel.app,http://localhost:5173
-CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud-name>
+AI_SERVICE_URL=http://localhost:8000
+CORS_ORIGINS=http://localhost:5173
+CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud-name>   # optional; without it originals are not kept
 ```
-
-`CLOUDINARY_URL` is copied straight from the Cloudinary dashboard and read by their SDK
-without further setup. It is **optional**: leave it out and uploads still work and are
-still extracted, they just are not kept — the API says which at startup. Storing an
-original never fails an upload either; if Cloudinary is unreachable the evidence is saved
-without a link and the error is logged.
-
-`CORS_ORIGINS` is a comma-separated list of origins the browser may call the API from. It
-defaults to `http://localhost:5173`, so local development needs no entry. Set it when the
-frontend is deployed somewhere — a deployed frontend is a different origin from the API,
-which is the whole reason it exists. Trailing slashes are stripped, so a stray one is not
-the bug it usually is.
 
 ```ini
 # ai-service/.env
 GEMINI_API_KEY=...
 ```
 
-The frontend needs no `.env` to run locally, but takes two if you want them:
-
-```ini
-# frontend/.env — both optional
-VITE_API_URL=https://your-api.example.com/api
-DEV_API_TARGET=http://localhost:5001
-```
-
-`VITE_API_URL` is where the browser sends `/api` calls. It defaults to the relative path
-`/api`, which Vite proxies to the API in dev — so the backend URL is **not** hardcoded
-anywhere in the app, and nothing about `localhost` appears in a production build. Setting
-it to an absolute URL is what you do to point the built frontend at a deployed API.
-
-> Doing that makes the calls genuinely cross-origin. The API allows that, but only from
-> the origins in its `CORS_ORIGINS` — so deploying the frontend to a new URL means adding
-> that URL there as well. Miss it and the browser blocks every request while the API
-> itself looks perfectly healthy.
-
-`DEV_API_TARGET` only moves the dev proxy, for when `PORT` in `backend/.env` is not 5000.
-It is deliberately not `VITE_`-prefixed: it is a dev-server setting, and `VITE_` variables
-are inlined into client code.
-
-Generate a secret with:
+Start the AI service first — the API calls it on every upload.
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
-```
-
-The API refuses to start without `JWT_SECRET`. That is deliberate — a hardcoded fallback
-would be worse than no auth at all, because every deployment would share a secret anyone
-reading the source could forge tokens with.
-
-### Install
-
-```bash
-# AI service
+# 1. AI service → :8000
 cd ai-service
-python -m venv venv
-./venv/Scripts/activate          # macOS/Linux: source venv/bin/activate
+python -m venv venv && ./venv/Scripts/activate   # macOS/Linux: source venv/bin/activate
 pip install -r requirements.txt
+python -m uvicorn main:app --reload
 
-# API
-cd ../backend && npm install
+# 2. API → :5000
+cd backend && npm install && node server.js
 
-# Frontend
-cd ../frontend && npm install
-```
-
-### Run
-
-Three terminals. **Start them in this order** — the API calls the AI service on every
-upload, so it needs it up first.
-
-```bash
-# 1. AI service  ->  :8000
-cd ai-service && ./venv/Scripts/python.exe -m uvicorn main:app --reload
-
-# 2. API  ->  :5000
-cd backend && node server.js
-
-# 3. Frontend  ->  :5173
-cd frontend && npm run dev
+# 3. Frontend → :5173
+cd frontend && npm install && npm run dev
 ```
 
 Open <http://localhost:5173>, create an account, and upload something.
-
-> The frontend calls `/api/*` and Vite proxies it to `:5000`, which keeps the request
-> same-origin and skips CORS entirely in development. Serve the frontend any other way
-> and the browser will start preflighting — see `CORS_ORIGINS` in
-> [Configuration](#configuration).
 
 ---
 
 ## API
 
-All `/api/evidence` and `/api/cases` routes require `Authorization: Bearer <token>`.
-
-### Auth
-
-| Endpoint | Body | Returns |
-|---|---|---|
-| `POST /api/auth/signup` | `{ email, password }` | `201` → `{ token, user }`, always a `user` |
-| `POST /api/auth/login` | `{ email, password }` | `200` → `{ token, user }` |
-| `GET /api/auth/me` | — | `{ user }`, or `401` if the token is stale |
-
-Passwords are bcrypt hashed and at least 8 characters. Login returns the same message for
-an unknown email and a wrong password, so the endpoint cannot be used to discover which
-addresses are registered.
-
-```bash
-curl -X POST http://localhost:5000/api/auth/signup \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"victim@example.com","password":"password123"}'
-```
-
-### `GET /api/cases`
-
-Cases the caller may see — their own, or all of them for an investigator — newest first.
-Investigators additionally get `ownerEmail` on each row.
-
-```json
-{
-  "cases": [
-    { "caseId": "CASE-2026-0412", "riskScore": 100, "riskLabel": "High risk",
-      "evidenceCount": 1, "updatedAt": "2026-08-05T09:12:03.114Z" }
-  ]
-}
-```
-
-### `POST /api/cases/:caseId/report`
-
-The case as a PDF: score and band, the dates evidence was uploaded, every extracted detail
-deduped across the case, the gaps, and a suggested next step chosen by risk band. Responds
-`application/pdf` with a `Content-Disposition` attachment name, or `404` on a case that is
-not yours — the same as reading one.
-
-Rendered fresh on every call rather than cached, so a report always reflects the evidence
-as it stands. Investigators can export as well: reading a case and exporting it are the
-same privilege.
-
-```bash
-curl -X POST http://localhost:5000/api/cases/CASE-2026-0001/report \
-  -H "Authorization: Bearer $TOKEN" \
-  -o argus-CASE-2026-0001.pdf
-```
-
-The suggested step is advice, by band, and is the only place the product tells anyone what
-to do:
-
-| Band | Suggested step |
-|---|---|
-| High | File at cybercrime.gov.in or call 1930, taking the report and originals |
-| Medium | Verify with the bank directly — using the number on your card, never one from the evidence |
-| Low | Monitor for further contact, and add anything new to the case |
-
-### `POST /api/evidence/upload`
-
-`multipart/form-data`. Send **either** `file` or `text`, not both. Requires the `user`
-role.
-
-| Field | Required | Notes |
-|---|---|---|
-| `caseId` | yes | Any string. The UI generates `CASE-<year>-<4 digits>` |
-| `type` | yes | `whatsapp` \| `screenshot` \| `bank_statement` |
-| `file` | either | An image (OCR), a `.pdf` (text layer), or a `.txt`/`.csv` (read directly) |
-| `text` | either | Raw text, skips OCR |
-
-The API decides which of those a file is: text by MIME type or extension, PDF by the
-`%PDF-` header rather than the filename. A WhatsApp export can therefore be posted as a
-plain file upload; it is not sent to Tesseract, which cannot open it. A file with no
-readable text in it — empty, a screenshot OCR could make nothing of, or a scanned PDF —
-returns `400` rather than being stored blank.
-
-Uploaded files are stored on Cloudinary when `CLOUDINARY_URL` is set, and the response
-carries `fileUrl` and `fileName`. Both are absent for pasted text, and absent if storage
-is off or failed; storing an original is never allowed to fail the upload.
-
-Returns `201` with the stored evidence document, and rescores the case. Uploading to a
-case ID owned by another account returns `403`, checked *before* any OCR or model call so
-it costs no quota.
-
-```bash
-# a WhatsApp export, as a file
-curl -X POST http://localhost:5000/api/evidence/upload \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "caseId=CASE-2026-0001" \
-  -F "type=whatsapp" \
-  -F "file=@WhatsApp Chat with Meera.txt"
-
-# or the same evidence pasted as text
-curl -X POST http://localhost:5000/api/evidence/upload \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "caseId=CASE-2026-0001" \
-  -F "type=whatsapp" \
-  -F "text=URGENT: account blocked. Send Rs 75,000 to scam@okicici. Call +91 98888 77777, share OTP."
-```
-
-### `GET /api/evidence/:caseId`
-
-The whole case. Returns `404` if the case does not exist **or** is not yours.
-
-```json
-{
-  "caseId": "CASE-2026-0001",
-  "riskScore": 100,
-  "riskLabel": "High risk",
-  "evidenceCount": 1,
-  "gaps": [
-    {
-      "missingType": "bank_statement",
-      "title": "No bank statement",
-      "detail": "Money is named in the evidence, but no bank statement has been uploaded to show it leaving an account.",
-      "values": ["Rs 75,000"]
-    },
-    {
-      "missingType": "screenshot",
-      "title": "No screenshot of the payment",
-      "detail": "A payment handle turned up in the text, but no screenshot has been uploaded to show a transfer to it.",
-      "values": ["scam@okicici"]
-    }
-  ],
-  "graph": {
-    "nodes": [
-      { "id": "phone:9888877777", "type": "phone", "value": "+91 98888 77777", "evidenceCount": 1 },
-      { "id": "upi_id:scam@okicici", "type": "upi_id", "value": "scam@okicici", "evidenceCount": 1 },
-      { "id": "amount:#75000", "type": "amount", "value": "Rs 75,000", "evidenceCount": 1 }
-    ],
-    "edges": [
-      { "source": "phone:9888877777", "target": "upi_id:scam@okicici", "weight": 1 },
-      { "source": "phone:9888877777", "target": "amount:#75000", "weight": 1 },
-      { "source": "upi_id:scam@okicici", "target": "amount:#75000", "weight": 1 }
-    ]
-  },
-  "evidence": [
-    {
-      "_id": "...",
-      "type": "whatsapp",
-      "rawText": "URGENT: account blocked. Send Rs 75,000 to ...",
-      "extractedEntities": {
-        "names": [],
-        "phone_numbers": ["+91 98888 77777"],
-        "upi_ids": ["scam@okicici"],
-        "bank_accounts": [],
-        "amounts": ["Rs 75,000"],
-        "dates": [],
-        "suspicious_keywords": ["URGENT", "account blocked", "OTP"]
-      },
-      "uploadedAt": "2026-08-05T09:12:03.114Z"
-    }
-  ]
-}
-```
-
-### Internal — AI service
-
-Not exposed to the browser.
+Everything except signup and login needs `Authorization: Bearer <token>`.
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /ocr` | Image bytes → text |
-| `POST /extract` | Text or image → the entity object above |
-| `GET /health` | Liveness |
-
----
-
-## Deployment
-
-All three services are live — see [Live](#live). `render.yaml` is a Render Blueprint for
-the AI service, and it uses the **Docker** runtime rather than a native Python one. That is
-not a preference:
-
-- The service needs **Tesseract**, a system binary. `pytesseract` only shells out to it.
-- Render's native runtimes build **without root**, so `apt-get install tesseract-ocr` in a
-  build command fails with **exit status 100** — apt cannot lock `/var/lib/dpkg`.
-- Render has **no configuration field for apt packages**. `aptPackages` and `Aptfile` are
-  Heroku conventions and do nothing here.
-
-So the packages are installed in `ai-service/Dockerfile`, where the build runs as root.
-`tesseract-ocr-eng` is listed explicitly alongside `tesseract-ocr`: the language data is a
-*recommended* package, and the image installs with `--no-install-recommends`, so leaving it
-implicit gives a working binary that cannot read anything.
-
-To deploy: point Render at the repo as a Blueprint and supply `GEMINI_API_KEY` when
-prompted. It is marked `sync: false`, so the key is never read from this file.
-
-Two things to know about the free plan:
-
-- **It sleeps after inactivity, and a cold start is slow** — this image is not small. The
-  API calls this service on every upload and waits for it, so the first upload after an
-  idle period can take long enough to look like a failure.
-- **`dockerfilePath` and `dockerContext` are relative to the repo root**, not to any
-  service directory. `./Dockerfile` would be looked for at the top of the repo.
-
-`render.yaml` covers the AI service only. The API is a second Render service and the
-frontend is on Vercel, both configured in their dashboards rather than here.
-
-Three settings have to agree across them, and nothing checks that for you:
-
-| Where | Setting | Value |
-|---|---|---|
-| Frontend (Vercel) | `VITE_API_URL` | `https://argus-backend-rgm6.onrender.com/api` |
-| API (Render) | `CORS_ORIGINS` | `https://theargus.vercel.app` |
-| API (Render) | `AI_SERVICE_URL` | `https://argus-ai-service.onrender.com` |
-| API (Render) | `CLOUDINARY_URL` | from the Cloudinary dashboard |
-
-Vercel gives each preview deployment its own URL, and those are not covered by the
-production origin. Add them to `CORS_ORIGINS` if you need previews to reach the API — a
-wildcard for `*.vercel.app` would let anyone's Vercel site call it from a browser.
-
----
-
-## Project structure
-
-```
-argus/
-├── frontend/                     React + Vite
-│   └── src/
-│       ├── pages/                Home, Login, StartCase, CasesList, CaseDashboard
-│       ├── components/           AuthProvider, RequireAuth, hero, sections, nav
-│       ├── lib/                  api client, auth context, case IDs, risk bands
-│       └── styles/               tokens, typography, shared components
-├── backend/                      Express + Mongoose
-│   ├── lib/riskScore.js          scoring rules — the file to adjust
-│   ├── lib/gaps.js               missing-evidence rules
-│   ├── lib/entities.js           reading the model's entity object safely
-│   ├── lib/graph.js              relationship graph — co-occurrence rules
-│   ├── lib/report.js             the PDF, laid out with pdfkit
-│   ├── lib/access.js             who may read a case
-│   ├── lib/storage.js            keeping the original upload (Cloudinary)
-│   ├── middleware/auth.js        JWT signing, requireAuth, requireRole
-│   ├── models/                   User, Case, Evidence
-│   └── routes/                   auth, cases, evidence
-├── ai-service/                   FastAPI
-│   ├── Dockerfile                Tesseract + the app — see Deploying
-│   ├── main.py                   routes
-│   ├── documents.py              is this a PDF or an image, and how to read it
-│   ├── ocr.py                    Tesseract
-│   ├── entity_extraction.py      Gemini call + error translation
-│   └── prompts.py                the extraction prompt
-└── docs/
-```
-
----
-
-## Design notes
-
-The interface is built on a locked token set in `frontend/src/styles/tokens.css`. Two
-rules are load-bearing rather than decorative:
-
-**Red is reserved.** `--alert-*` means a confirmed fraud signal and nothing else. Form
-validation and failed requests use caution orange, missing evidence uses violet, and a
-risk score only earns red in the top band. If red appears everywhere, it stops meaning
-anything in the one place it matters.
-
-**Numbers are set in monospace with `tabular-nums`.** Account numbers, UPI IDs and phone
-numbers are the evidence. A `0` misread as `O` in a complaint is a real failure, not a
-cosmetic one.
+| `POST /api/auth/signup` · `/login` · `GET /api/auth/me` | Accounts and sessions |
+| `GET /api/cases` | Cases the caller may see |
+| `POST /api/cases/:caseId/report` | The case as a PDF |
+| `POST /api/evidence/upload` | Add evidence — multipart, `file` or `text` |
+| `GET /api/evidence/:caseId` | The case: score, gaps, graph and evidence |
 
 ---
 
 ## Known limitations
 
-- **No email verification.** Any address works at signup, real or not.
-- **Scanned PDFs are not read.** Text is taken from the PDF's own text layer, so a PDF
-  that is only photographs of pages comes back empty. Upload a screenshot instead.
-- **Original files need `CLOUDINARY_URL`.** Without it uploads still work and are still
-  extracted, but the originals are not kept.
-- **Investigator accounts are promoted by hand** in the database — there is no admin screen.
-- **Free-tier hosting sleeps.** The first request after an idle period can take up to a
-  minute.
+- No email verification — any address works at signup.
+- Scanned PDFs are not read; only a PDF's existing text layer is used.
+- Investigator accounts are promoted by hand in the database.
+- Free-tier hosting sleeps, so the first request after idle is slow.
+- No automated tests.
 
 ---
 
 ## Data policy
 
-**Synthetic and sample data only** — in code, tests, demos, and UI copy. Every phone
-number, UPI ID and amount in this repository is invented. This is a prototype and has no
-business holding a real victim's evidence.
+**Synthetic and sample data only** — in code, tests, demos and UI copy. Every phone number,
+UPI ID and amount in this repository is invented. This is a prototype and has no business
+holding a real victim's evidence.
