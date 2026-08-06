@@ -252,6 +252,27 @@ JWT_SECRET=<a long random string>
 GEMINI_API_KEY=...
 ```
 
+The frontend needs no `.env` to run locally, but takes two if you want them:
+
+```ini
+# frontend/.env — both optional
+VITE_API_URL=https://your-api.example.com/api
+DEV_API_TARGET=http://localhost:5001
+```
+
+`VITE_API_URL` is where the browser sends `/api` calls. It defaults to the relative path
+`/api`, which Vite proxies to the API in dev — so the backend URL is **not** hardcoded
+anywhere in the app, and nothing about `localhost` appears in a production build. Setting
+it to an absolute URL is what you do to point the built frontend at a deployed API.
+
+> Doing that makes the calls genuinely cross-origin, and `backend/server.js` mounts no CORS
+> middleware. A deployed frontend talking to a deployed API needs one added; the proxy is
+> what lets local development get away without it.
+
+`DEV_API_TARGET` only moves the dev proxy, for when `PORT` in `backend/.env` is not 5000.
+It is deliberately not `VITE_`-prefixed: it is a dev-server setting, and `VITE_` variables
+are inlined into client code.
+
 Generate a secret with:
 
 ```bash
