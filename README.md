@@ -311,14 +311,27 @@ role.
 |---|---|---|
 | `caseId` | yes | Any string. The UI generates `CASE-<year>-<4 digits>` |
 | `type` | yes | `whatsapp` \| `screenshot` \| `bank_statement` |
-| `file` | either | Image for the OCR path |
+| `file` | either | An image, read by OCR — or a `.txt`/`.csv`, read directly |
 | `text` | either | Raw text, skips OCR |
+
+The API decides which of those a file is, by MIME type or extension. A WhatsApp export can
+therefore be posted as a plain file upload; it is not sent to Tesseract, which cannot open
+it. A file with no readable text in it — empty, or a screenshot OCR could make nothing of
+— returns `400` rather than being stored blank.
 
 Returns `201` with the stored evidence document, and rescores the case. Uploading to a
 case ID owned by another account returns `403`, checked *before* any OCR or model call so
 it costs no quota.
 
 ```bash
+# a WhatsApp export, as a file
+curl -X POST http://localhost:5000/api/evidence/upload \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "caseId=CASE-2026-0001" \
+  -F "type=whatsapp" \
+  -F "file=@WhatsApp Chat with Meera.txt"
+
+# or the same evidence pasted as text
 curl -X POST http://localhost:5000/api/evidence/upload \
   -H "Authorization: Bearer $TOKEN" \
   -F "caseId=CASE-2026-0001" \

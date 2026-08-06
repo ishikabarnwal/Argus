@@ -42,6 +42,29 @@ async function recalculateCase(caseId, ownerId) {
   return Case.findOneAndUpdate({ caseId }, update, { new: true, upsert: true });
 }
 
+/**
+ * Files the OCR path cannot read.
+ *
+ * ai-service /ocr does PIL.Image.open() on whatever bytes it is handed, so a
+ * WhatsApp .txt export raises UnidentifiedImageError there and the upload
+ * comes back as a 502. Text files have to be read here instead — they are
+ * already text, and there is nothing for OCR to do.
+ *
+ * This lived in the frontend, which meant the API only worked when called
+ * through its own UI: the documented `.txt` upload failed for anyone using
+ * the endpoint directly. The rule belongs on the side that knows what /ocr
+ * can open.
+ *
+ * multer's field names, not the browser's: mimetype and originalname rather
+ * than type and name. The extension check is not redundant — browsers and
+ * curl both send application/octet-stream for a .txt often enough.
+ */
+function isTextFile(file) {
+  return (
+    Boolean(file.mimetype?.startsWith('text/')) || /\.(txt|csv|log|md)$/i.test(file.originalname)
+  );
+}
+
 /** Investigators read everything; everyone else reads only what they own. */
 function canRead(caseDoc, user) {
   if (user.role === 'investigator') return true;
@@ -69,11 +92,16 @@ router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), 
     return res.status(403).json({ error: 'That case ID belongs to another account' });
   }
 
-  // Resolve to plain text first (running OCR ourselves when a file is given)
-  // so we always have rawText to store, then reuse the ai-service /extract
-  // text path for entity extraction instead of re-uploading the file there.
+  // Resolve to plain text first (reading or OCR'ing the file ourselves when
+  // one is given) so we always have rawText to store, then reuse the
+  // ai-service /extract text path for entity extraction instead of
+  // re-uploading the file there.
   let rawText = text;
-  if (req.file) {
+  if (req.file && isTextFile(req.file)) {
+    // Already text. Sending it to /ocr is not merely wasteful — it fails, so
+    // this branch is what makes a WhatsApp export uploadable at all.
+    rawText = req.file.buffer.toString('utf8');
+  } else if (req.file) {
     const ocrForm = new FormData();
     ocrForm.append('file', new Blob([req.file.buffer]), req.file.originalname);
 
@@ -86,6 +114,13 @@ router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), 
       return res.status(502).json({ error: 'ai-service /ocr request failed', detail });
     }
     ({ text: rawText } = await ocrResponse.json());
+  }
+
+  // An empty file and a screenshot OCR could make nothing of both land here.
+  // Without this they reach Evidence.create(), where rawText is required, and
+  // come back as a 500 — a validation problem reported as a server fault.
+  if (!rawText.trim()) {
+    return res.status(400).json({ error: 'No readable text in that upload' });
   }
 
   const extractForm = new FormData();

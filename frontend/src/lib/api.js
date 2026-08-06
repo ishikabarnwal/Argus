@@ -39,21 +39,6 @@ function authHeaders() {
 }
 
 /**
- * Files the OCR path cannot read.
- *
- * The backend sends any uploaded file to ai-service /ocr, which does
- * `PIL.Image.open(bytes)` — handed a WhatsApp .txt export that raises
- * UnidentifiedImageError, the service 500s and the upload comes back as a
- * 502. A text file therefore has to be read here and posted as `text`, which
- * routes it to /extract directly and skips OCR entirely. That is not a
- * workaround for a bug so much as using the right one of the two paths the
- * API already offers.
- */
-function isTextFile(file) {
-  return file.type.startsWith('text/') || /\.(txt|csv|log|md)$/i.test(file.name)
-}
-
-/**
  * The backend forwards the ai-service's response body verbatim, as a string,
  * so a message from that end arrives JSON-encoded one level down:
  * { error: 'ai-service /extract request failed', detail: '{"detail":"…"}' }.
@@ -137,15 +122,18 @@ export async function fetchCases({ signal } = {}) {
 /**
  * POST /api/evidence/upload — multipart, with either a file or raw text.
  * Resolves to the created Evidence document.
+ *
+ * Every file goes up as a file, including .txt and .csv. The backend decides
+ * which of those it can OCR and which it should just read; this used to be
+ * sorted out here, which left the same rule written in two places and the API
+ * broken for anyone not calling it through this client.
  */
 export async function uploadEvidence({ caseId, type, file, text }) {
   const body = new FormData()
   body.append('caseId', caseId)
   body.append('type', type)
 
-  if (file && isTextFile(file)) {
-    body.append('text', await file.text())
-  } else if (file) {
+  if (file) {
     body.append('file', file)
   } else {
     body.append('text', text)
