@@ -82,6 +82,8 @@ flowchart LR
 
 ## Running locally
 
+The links above are for using Argus. This is for running or changing it.
+
 Needs Node 20+, Python 3.11+, Tesseract on your `PATH`, a MongoDB connection string and a
 [Gemini API key](https://aistudio.google.com/apikey).
 
@@ -91,7 +93,7 @@ MONGO_URI=mongodb+srv://...
 JWT_SECRET=<a long random string>
 AI_SERVICE_URL=http://localhost:8000
 CORS_ORIGINS=http://localhost:5173
-CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud-name>   # optional; without it originals are not kept
+CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud-name>
 ```
 
 ```ini
@@ -99,23 +101,24 @@ CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud-name>   # optional; without it
 GEMINI_API_KEY=...
 ```
 
+`CLOUDINARY_URL` is optional; without it, original uploads are not kept.
+
 Start the AI service first — the API calls it on every upload.
 
 ```bash
-# 1. AI service → :8000
-cd ai-service
-python -m venv venv && ./venv/Scripts/activate   # macOS/Linux: source venv/bin/activate
-pip install -r requirements.txt
-python -m uvicorn main:app --reload
+# :8000
+cd ai-service && python -m venv venv && ./venv/Scripts/activate
+pip install -r requirements.txt && python -m uvicorn main:app --reload
 
-# 2. API → :5000
+# :5000
 cd backend && npm install && node server.js
 
-# 3. Frontend → :5173
+# :5173
 cd frontend && npm install && npm run dev
 ```
 
-Open <http://localhost:5173>, create an account, and upload something.
+On macOS or Linux the activate step is `source venv/bin/activate`. Then open
+<http://localhost:5173>.
 
 ---
 
