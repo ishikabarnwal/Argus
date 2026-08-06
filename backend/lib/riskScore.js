@@ -32,11 +32,17 @@ const AMOUNT_TIER_2 = 50_000
 
 const MAX_SCORE = 100
 
-/** Upper bound of each band. Ordered low to high; the last must be MAX_SCORE. */
+/**
+ * Upper bound of each band. Ordered low to high; the last must be MAX_SCORE.
+ *
+ * `level` is the stable key — it is what other modules branch on, so wording
+ * can be reworded without breaking them. The same three bands are mirrored in
+ * frontend/src/lib/risk.js, which maps them to colours.
+ */
 const BANDS = [
-  { ceiling: 30, label: 'Low risk' },
-  { ceiling: 65, label: 'Medium risk' },
-  { ceiling: MAX_SCORE, label: 'High risk' },
+  { ceiling: 30, level: 'low', label: 'Low risk' },
+  { ceiling: 65, level: 'medium', label: 'Medium risk' },
+  { ceiling: MAX_SCORE, level: 'high', label: 'High risk' },
 ]
 
 /**
@@ -99,16 +105,27 @@ function scoreCase(evidenceList) {
   return Math.min(strongest + corroboration, MAX_SCORE)
 }
 
-/** Band name for a score. Out-of-range input is clamped, not rejected. */
-function riskLabel(score) {
+/** Band for a score. Out-of-range input is clamped, not rejected. */
+function bandFor(score) {
   const clamped = Math.min(Math.max(Number(score) || 0, 0), MAX_SCORE)
-  return BANDS.find((band) => clamped <= band.ceiling).label
+  return BANDS.find((band) => clamped <= band.ceiling)
+}
+
+/** Band name for a score, for display. */
+function riskLabel(score) {
+  return bandFor(score).label
+}
+
+/** @returns {'low' | 'medium' | 'high'} — branch on this, not on the label. */
+function riskLevel(score) {
+  return bandFor(score).level
 }
 
 module.exports = {
   scoreEvidence,
   scoreCase,
   riskLabel,
+  riskLevel,
   POINTS,
   BANDS,
   MAX_SCORE,

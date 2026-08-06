@@ -18,7 +18,7 @@
  * cannot be flagged as unsupported.
  */
 
-const { list } = require('./entities');
+const { valuesAcrossCase } = require('./entities');
 
 /**
  * The values that triggered a gap travel as their own list rather than being
@@ -50,24 +50,6 @@ const RULES = [
       'A contact number turned up in the text, but no chat export has been uploaded to show the conversation.',
   },
 ];
-
-/**
- * Every distinct value of one entity key across the whole case.
- *
- * Deduped because the same UPI ID appearing in a chat and again in a
- * screenshot is one handle, not two, and listing it twice in a message that
- * says "no screenshot proves this" reads as though there were more of them
- * than there are.
- */
-function valuesAcrossCase(evidenceList, key) {
-  const values = evidenceList.flatMap((item) =>
-    list(item?.extractedEntities, key)
-      .map((value) => (typeof value === 'string' ? value.trim() : String(value)))
-      .filter((value) => value.length > 0),
-  );
-
-  return [...new Set(values)];
-}
 
 /**
  * Gaps for one case, given every piece of evidence on it.

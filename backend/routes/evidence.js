@@ -4,6 +4,7 @@ const Evidence = require('../models/Evidence');
 const Case = require('../models/Case');
 const { scoreCase, riskLabel } = require('../lib/riskScore');
 const { findGaps } = require('../lib/gaps');
+const { canRead } = require('../lib/access');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
@@ -63,12 +64,6 @@ function isTextFile(file) {
   return (
     Boolean(file.mimetype?.startsWith('text/')) || /\.(txt|csv|log|md)$/i.test(file.originalname)
   );
-}
-
-/** Investigators read everything; everyone else reads only what they own. */
-function canRead(caseDoc, user) {
-  if (user.role === 'investigator') return true;
-  return Boolean(caseDoc.userId) && caseDoc.userId.toString() === user.id;
 }
 
 // Investigators are read-only, so uploading is restricted to the 'user' role.

@@ -129,6 +129,18 @@
   text-wrap: pretty;
 }
 
+/* ---- next action ---------------------------------------------------- */
+
+.caseactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.caseactions__error {
+  margin-top: 0.8rem;
+}
+
 /* ---- missing evidence ---------------------------------------------- */
 
 /* Gap violet throughout: these say something is absent, which is exactly what

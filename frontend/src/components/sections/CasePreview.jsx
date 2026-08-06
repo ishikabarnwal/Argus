@@ -7,13 +7,14 @@ import './CasePreview.css'
  * Stats alongside a preview of what Argus actually produces.
  *
  * A stylised mock rather than a screenshot, so it stays legible at this size
- * and does not have to be re-shot every time the dashboard moves. What it
- * shows is real: the score, the timeline, the extracted entities and the
- * flagged gap all exist on /case/:caseId.
+ * and does not have to be re-shot every time the dashboard moves. Everything
+ * it shows is real and reachable on /case/:caseId: the score, the timeline,
+ * the extracted entities, the flagged gap, and both next actions — the portal
+ * link and the PDF export.
  *
- * The one exception is "Next action" — report generation is not built. It is
- * drawn as dead spans, is named as unbuilt in the README, and is the only
- * thing here that runs ahead of the product.
+ * The buttons here stay dead spans all the same. This is a picture of the
+ * product, and four working controls inside a role="img" would be a worse
+ * lie than four inert ones.
  *
  * The mock is laid out in HTML rather than drawn in SVG, which is the second
  * attempt at it. SVG text does not wrap: every string sat at a hand-placed

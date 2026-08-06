@@ -117,6 +117,37 @@ export async function fetchCases({ signal } = {}) {
   return response.json()
 }
 
+/**
+ * POST /api/cases/:caseId/report — the case as a PDF, saved to disk.
+ *
+ * The token lives in localStorage rather than a cookie, so the browser cannot
+ * be pointed at the URL directly: the request has to carry an Authorization
+ * header, which means fetching the bytes and triggering the save by hand.
+ *
+ * The object URL is revoked straight after the click. Skipping that holds the
+ * whole file in memory until the tab is closed, which for a page someone
+ * leaves open all day is a leak with no upside.
+ */
+export async function downloadReport(caseId) {
+  const response = await fetch(`${API_BASE}/cases/${encodeURIComponent(caseId)}/report`, {
+    method: 'POST',
+    headers: authHeaders(),
+  })
+  if (!response.ok) throw await errorFrom(response)
+
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `argus-${caseId}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+
+  URL.revokeObjectURL(url)
+}
+
 /* ---- evidence ----------------------------------------------------- */
 
 /**

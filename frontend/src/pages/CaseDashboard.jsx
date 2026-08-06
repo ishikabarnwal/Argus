@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { IconChat, IconGap, IconImage, IconStatement } from '../components/Icons'
-import { fetchCase } from '../lib/api'
+import { downloadReport, fetchCase } from '../lib/api'
 import { riskColorVar } from '../lib/risk'
 import './CaseDashboard.css'
+
+/** The real portal, not a placeholder. */
+const CYBERCRIME_PORTAL = 'https://cybercrime.gov.in'
 
 /**
  * Everything the backend holds for one case.
@@ -107,6 +110,63 @@ function Gaps({ gaps }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * The two things worth doing once a case has been read.
+ *
+ * Filing leads, because it is the action that actually helps the victim; the
+ * report exists to be taken along with it. Both were dead spans in the
+ * homepage mock before there was anything behind them.
+ */
+function NextAction({ caseId }) {
+  const [exporting, setExporting] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleExport() {
+    setExporting(true)
+    setError(null)
+    try {
+      await downloadReport(caseId)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  return (
+    <>
+      <div className="caseactions">
+        <a
+          className="btn btn--primary"
+          href={CYBERCRIME_PORTAL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          File on cybercrime.gov.in
+          <span className="sr-only"> (opens in a new tab)</span>
+        </a>
+
+        <button
+          className="btn btn--outline"
+          type="button"
+          onClick={handleExport}
+          disabled={exporting}
+        >
+          {exporting ? 'Preparing PDF…' : 'Export PDF'}
+        </button>
+      </div>
+
+      {/* Caution, not alert: a download that failed is a problem, not a
+          fraud finding. */}
+      {error && (
+        <p className="casestate casestate--bad caseactions__error" role="alert">
+          Could not generate the report — {error}
+        </p>
+      )}
+    </>
   )
 }
 
@@ -267,6 +327,11 @@ export default function CaseDashboard() {
                 <Gaps gaps={caseFile.gaps} />
               </section>
             )}
+
+            <section className="casesection">
+              <p className="label-caps casesection__label">Next action</p>
+              <NextAction caseId={caseId} />
+            </section>
 
             <section className="casesection">
               <p className="label-caps casesection__label">Timeline</p>

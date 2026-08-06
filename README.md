@@ -27,6 +27,7 @@ Upload a piece of evidence and Argus will:
    entities imply.
 6. **Show it back** — a dashboard with the risk score, the gaps, a timeline, and the
    extracted entities as tags.
+7. **Hand it over** — a PDF report of the whole case, to take to a complaint.
 
 ### Supported evidence
 
@@ -73,12 +74,11 @@ A working prototype, not a finished product. Being specific about the line:
 - Rule-based case risk scoring, recomputed on every upload
 - Missing-evidence detection — three rules, surfaced on the dashboard in gap violet
 - Case list and case dashboard — evidence cards, entity tags, timeline, raw text
+- PDF case report — score, entities, gaps and a suggested next step, downloadable
 - Landing page, light and dark themes
 
 **Designed but not built**
 - Relationship graph across entities.
-- Generated complaint report. The landing page mock shows *File on cybercrime.gov.in* and
-  *Export PDF*; neither exists.
 - Storing the uploaded file itself. Screenshots are OCR'd in memory and discarded — only
   the extracted text is kept.
 - Automated tests.
@@ -302,6 +302,32 @@ Investigators additionally get `ownerEmail` on each row.
 }
 ```
 
+### `POST /api/cases/:caseId/report`
+
+The case as a PDF: score and band, the dates evidence was uploaded, every extracted detail
+deduped across the case, the gaps, and a suggested next step chosen by risk band. Responds
+`application/pdf` with a `Content-Disposition` attachment name, or `404` on a case that is
+not yours — the same as reading one.
+
+Rendered fresh on every call rather than cached, so a report always reflects the evidence
+as it stands. Investigators can export as well: reading a case and exporting it are the
+same privilege.
+
+```bash
+curl -X POST http://localhost:5000/api/cases/CASE-2026-0001/report \
+  -H "Authorization: Bearer $TOKEN" \
+  -o argus-CASE-2026-0001.pdf
+```
+
+The suggested step is advice, by band, and is the only place the product tells anyone what
+to do:
+
+| Band | Suggested step |
+|---|---|
+| High | File at cybercrime.gov.in or call 1930, taking the report and originals |
+| Medium | Verify with the bank directly — using the number on your card, never one from the evidence |
+| Low | Monitor for further contact, and add anything new to the case |
+
 ### `POST /api/evidence/upload`
 
 `multipart/form-data`. Send **either** `file` or `text`, not both. Requires the `user`
@@ -409,6 +435,8 @@ argus/
 │   ├── lib/riskScore.js          scoring rules — the file to adjust
 │   ├── lib/gaps.js               missing-evidence rules
 │   ├── lib/entities.js           reading the model's entity object safely
+│   ├── lib/report.js             the PDF, laid out with pdfkit
+│   ├── lib/access.js             who may read a case
 │   ├── middleware/auth.js        JWT signing, requireAuth, requireRole
 │   ├── models/                   User, Case, Evidence
 │   └── routes/                   auth, cases, evidence

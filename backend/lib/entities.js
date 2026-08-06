@@ -17,4 +17,22 @@ function list(entities, key) {
   return [value];
 }
 
-module.exports = { list };
+/**
+ * Every distinct value of one entity key across a whole case.
+ *
+ * Deduped and trimmed, because the same UPI ID appearing in a chat and again
+ * in a screenshot is one handle, not two. Both callers depend on that: the
+ * gap rules would otherwise claim more unsupported values than exist, and the
+ * report would list the same account number twice.
+ */
+function valuesAcrossCase(evidenceList, key) {
+  const values = evidenceList.flatMap((item) =>
+    list(item?.extractedEntities, key)
+      .map((value) => (typeof value === 'string' ? value.trim() : String(value)))
+      .filter((value) => value.length > 0),
+  );
+
+  return [...new Set(values)];
+}
+
+module.exports = { list, valuesAcrossCase };
