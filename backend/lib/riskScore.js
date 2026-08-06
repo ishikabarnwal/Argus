@@ -15,6 +15,8 @@
  * "more evidence, more confirmed pattern" rule can only live at case level.
  */
 
+const { list } = require('./entities')
+
 /** Points per rule. Adjust here; nothing else hard-codes these. */
 const POINTS = {
   suspiciousKeyword: 15,
@@ -36,17 +38,6 @@ const BANDS = [
   { ceiling: 65, label: 'Medium risk' },
   { ceiling: MAX_SCORE, label: 'High risk' },
 ]
-
-/**
- * extractedEntities is Mixed in the schema and comes from a language model, so
- * any field may be absent, a bare string, or a list of non-strings.
- */
-function list(entities, key) {
-  const value = entities?.[key]
-  if (Array.isArray(value)) return value.filter((item) => item != null && item !== '')
-  if (value == null || value === '') return []
-  return [value]
-}
 
 /**
  * Pull a number out of whatever the model called an amount: "₹25,000",

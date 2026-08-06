@@ -8,11 +8,12 @@ import './CaseDashboard.css'
 /**
  * Everything the backend holds for one case.
  *
- * The homepage preview is the reference for how this should look. The risk
- * score is now real — computed by backend/lib/riskScore.js from the entities
- * actually extracted — so the badge here shows what the rules found rather
- * than a fixed demo number. The preview's "next action" is still a mock, and
- * is deliberately not reproduced.
+ * The homepage preview is the reference for how this should look, and all of
+ * it is real now except one panel: the risk score comes from
+ * backend/lib/riskScore.js and the missing-evidence notice from
+ * backend/lib/gaps.js, both computed from the entities actually extracted.
+ * The preview's "next action" is still a mock — report generation does not
+ * exist — and is deliberately not reproduced here.
  */
 
 const TYPE_META = {
@@ -67,6 +68,46 @@ function formatDateTime(value) {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+/**
+ * What the case is missing, from backend/lib/gaps.js.
+ *
+ * Violet, not red: red is reserved for confirmed fraud signals, and "you have
+ * not uploaded a bank statement" is an absence, not a finding. The same
+ * treatment the empty evidence card uses, which is the other place on this
+ * page where the subject is something that is not there.
+ *
+ * Sits above the timeline deliberately. The evidence below is what the case
+ * has; this is the one section that says what it does not, and putting it
+ * after a long list of cards would bury the thing that is easiest to act on.
+ */
+function Gaps({ gaps }) {
+  return (
+    <ul className="casegaps">
+      {gaps.map((gap) => (
+        <li className="casegap" key={gap.missingType}>
+          <span className="casegap__icon" aria-hidden="true">
+            <IconGap />
+          </span>
+          <div className="casegap__text">
+            <h2 className="casegap__title">{gap.title}</h2>
+            <p className="casegap__detail">{gap.detail}</p>
+            {/* Mono, like everywhere else these values appear: they are
+                account handles and figures, and a 0 read as an O is a real
+                failure rather than a cosmetic one. */}
+            <div className="casegap__chips">
+              {gap.values.map((value) => (
+                <span className="chip chip--mono" key={value}>
+                  {value}
+                </span>
+              ))}
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 /** The homepage preview's timeline, over real uploads. */
@@ -217,6 +258,16 @@ export default function CaseDashboard() {
 
         {evidence?.length > 0 && (
           <>
+            {/* Absent on a case with nothing missing, rather than shown empty
+                with a reassuring line. "No gaps found" would overstate what
+                three rules over model output can actually establish. */}
+            {caseFile.gaps?.length > 0 && (
+              <section className="casesection">
+                <p className="label-caps casesection__label">Missing evidence</p>
+                <Gaps gaps={caseFile.gaps} />
+              </section>
+            )}
+
             <section className="casesection">
               <p className="label-caps casesection__label">Timeline</p>
               <Timeline evidence={evidence} />

@@ -23,8 +23,10 @@ Upload a piece of evidence and Argus will:
    evidence is added.
 4. **File it** — stored against a case ID, so evidence added over time accumulates into
    one case rather than a folder of loose files.
-5. **Show it back** — a dashboard with the risk score, a timeline, and the extracted
-   entities as tags.
+5. **Flag what is missing** — the evidence type the case still needs, given what its
+   entities imply.
+6. **Show it back** — a dashboard with the risk score, the gaps, a timeline, and the
+   extracted entities as tags.
 
 ### Supported evidence
 
@@ -47,6 +49,17 @@ A case belongs to the account that created it. A case you do not own answers `40
 same as a case that does not exist — so case IDs cannot be probed to discover whose they
 are.
 
+**Signup always creates a `user`.** An investigator reads every case in the system, so the
+role is granted rather than claimed — a `role` in the signup body is ignored. There is no
+admin surface to grant one from, so it is a database edit:
+
+```js
+// mongosh, against the Argus database
+db.users.updateOne({ email: 'reviewer@example.com' }, { $set: { role: 'investigator' } })
+```
+
+The role is signed into the token, so it applies from that account's next sign-in.
+
 ---
 
 ## Status
@@ -58,14 +71,17 @@ A working prototype, not a finished product. Being specific about the line:
 - Upload screen — drag-and-drop, click-to-browse, or paste text
 - OCR and entity extraction pipeline
 - Rule-based case risk scoring, recomputed on every upload
+- Missing-evidence detection — three rules, surfaced on the dashboard in gap violet
 - Case list and case dashboard — evidence cards, entity tags, timeline, raw text
 - Landing page, light and dark themes
 
 **Designed but not built**
-- Missing-evidence detection — flagging gaps rather than only processing what was given.
-  The landing page shows a *mock* of this; nothing computes it yet.
 - Relationship graph across entities.
-- Generated complaint report.
+- Generated complaint report. The landing page mock shows *File on cybercrime.gov.in* and
+  *Export PDF*; neither exists.
+- Storing the uploaded file itself. Screenshots are OCR'd in memory and discarded — only
+  the extracted text is kept.
+- Automated tests.
 
 ---
 
@@ -96,7 +112,9 @@ Gemini SDK both live there. Keeping them behind their own service means the API 
 stays a thin CRUD and access-control boundary, and the slow, failure-prone work is
 isolated in one place.
 
-**Why Gemini rather than OpenAI?** A usable free tier. See [Limitations](#limitations).
+**Why Gemini rather than OpenAI?** A usable free tier. The quota is small and per model
+per day; the model is pinned in `ai-service/entity_extraction.py` and must never be a
+`-latest` alias, which can silently move to a model with a much smaller allowance.
 
 ---
 
@@ -142,6 +160,32 @@ meaningless.
 Red is reserved for the top band only — see [Design notes](#design-notes). Low is blue
 rather than green: a low score also looks exactly like an extraction that found nothing,
 and green would promise a safety the score cannot establish.
+
+---
+
+## Missing evidence
+
+Rule-based as well, in `backend/lib/gaps.js`. Every rule has the same shape: an entity
+turned up somewhere on the case, and the evidence type that would corroborate it was never
+uploaded.
+
+| Found in the evidence | Missing | What it means |
+|---|---|---|
+| Amounts | Bank statement | Money is named, nothing shows it moving |
+| UPI IDs | Screenshot | A payment handle with no picture of the transfer |
+| Phone numbers | WhatsApp export | A contact number with no conversation behind it |
+
+Three rules, one per supported evidence type. That is a scope rule rather than a
+coincidence: a gap can only name something Argus can actually accept, or it would be
+telling a victim to find a file the upload screen would then refuse.
+
+Derived on every read rather than stored — unlike the score there is no number that needs
+to stay stable between uploads. They are drawn in gap violet, never red: "you have not
+uploaded a bank statement" is an absence, not a confirmed fraud signal.
+
+**They inherit every miss the extraction made.** An amount the model did not pick up is an
+amount that cannot be flagged as unsupported, so a case with no gaps is not a case with
+nothing missing.
 
 ---
 
@@ -230,7 +274,7 @@ All `/api/evidence` and `/api/cases` routes require `Authorization: Bearer <toke
 
 | Endpoint | Body | Returns |
 |---|---|---|
-| `POST /api/auth/signup` | `{ email, password, role? }` | `201` → `{ token, user }` |
+| `POST /api/auth/signup` | `{ email, password }` | `201` → `{ token, user }`, always a `user` |
 | `POST /api/auth/login` | `{ email, password }` | `200` → `{ token, user }` |
 | `GET /api/auth/me` | — | `{ user }`, or `401` if the token is stale |
 
@@ -241,7 +285,7 @@ addresses are registered.
 ```bash
 curl -X POST http://localhost:5000/api/auth/signup \
   -H 'Content-Type: application/json' \
-  -d '{"email":"victim@example.com","password":"password123","role":"user"}'
+  -d '{"email":"victim@example.com","password":"password123"}'
 ```
 
 ### `GET /api/cases`
@@ -292,6 +336,20 @@ The whole case. Returns `404` if the case does not exist **or** is not yours.
   "riskScore": 100,
   "riskLabel": "High risk",
   "evidenceCount": 1,
+  "gaps": [
+    {
+      "missingType": "bank_statement",
+      "title": "No bank statement",
+      "detail": "Money is named in the evidence, but no bank statement has been uploaded to show it leaving an account.",
+      "values": ["Rs 75,000"]
+    },
+    {
+      "missingType": "screenshot",
+      "title": "No screenshot of the payment",
+      "detail": "A payment handle turned up in the text, but no screenshot has been uploaded to show a transfer to it.",
+      "values": ["scam@okicici"]
+    }
+  ],
   "evidence": [
     {
       "_id": "...",
@@ -336,6 +394,8 @@ argus/
 │       └── styles/               tokens, typography, shared components
 ├── backend/                      Express + Mongoose
 │   ├── lib/riskScore.js          scoring rules — the file to adjust
+│   ├── lib/gaps.js               missing-evidence rules
+│   ├── lib/entities.js           reading the model's entity object safely
 │   ├── middleware/auth.js        JWT signing, requireAuth, requireRole
 │   ├── models/                   User, Case, Evidence
 │   └── routes/                   auth, cases, evidence

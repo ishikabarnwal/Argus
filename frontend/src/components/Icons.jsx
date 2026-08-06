@@ -96,7 +96,7 @@ export function IconSpark() {
   )
 }
 
-/** Open padlock — free and self-service, no gate in front of it. */
+/** Open padlock — free to use, no paywall in front of it. */
 export function IconOpenLock() {
   return (
     <svg {...base}>

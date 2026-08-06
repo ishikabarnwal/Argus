@@ -129,6 +129,74 @@
   text-wrap: pretty;
 }
 
+/* ---- missing evidence ---------------------------------------------- */
+
+/* Gap violet throughout: these say something is absent, which is exactly what
+ * --gap is for and exactly what red is not. The frame and the title carry the
+ * colour; the body stays secondary text so a case with three gaps does not
+ * turn into a wall of violet, and the value chips keep the same blue they have
+ * on the evidence cards — a chip means "extracted value" everywhere on this
+ * page, and the panel around it is what says it is unsupported. */
+.casegaps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.casegap {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--gap) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gap) 40%, transparent);
+}
+
+.casegap__icon {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--gap);
+}
+
+.casegap__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.casegap__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.casegap__title {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: 650;
+  letter-spacing: var(--tracking-tight);
+  color: var(--gap);
+}
+
+.casegap__detail {
+  font-size: var(--text-caption);
+  line-height: 1.45;
+  text-wrap: pretty;
+  color: var(--text-secondary);
+}
+
+.casegap__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
 /* ---- evidence cards ------------------------------------------------ */
 
 .casefiles {

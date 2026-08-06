@@ -6,10 +6,14 @@ import './CasePreview.css'
 /**
  * Stats alongside a preview of what Argus actually produces.
  *
- * There is no built dashboard yet, so the preview is a stylised mock rather
- * than a screenshot. It deliberately shows the two differentiators the copy
- * claims — a flagged gap in the evidence, and an explicit next action — so
- * the image is making the same argument as the words next to it.
+ * A stylised mock rather than a screenshot, so it stays legible at this size
+ * and does not have to be re-shot every time the dashboard moves. What it
+ * shows is real: the score, the timeline, the extracted entities and the
+ * flagged gap all exist on /case/:caseId.
+ *
+ * The one exception is "Next action" — report generation is not built. It is
+ * drawn as dead spans, is named as unbuilt in the README, and is the only
+ * thing here that runs ahead of the product.
  *
  * The mock is laid out in HTML rather than drawn in SVG, which is the second
  * attempt at it. SVG text does not wrap: every string sat at a hand-placed
@@ -24,9 +28,9 @@ import './CasePreview.css'
 
 const STATS = [
   { id: 'types', icon: <IconLayers />, value: '3', label: 'Evidence types supported' },
-  { id: 'steps', icon: <IconAction />, value: '4', label: 'Steps from upload to report' },
+  { id: 'score', icon: <IconAction />, value: '0–100', label: 'Rule-based fraud risk score' },
   { id: 'ai', icon: <IconSpark />, value: 'AI', label: 'Gemini-powered extraction' },
-  { id: 'free', icon: <IconOpenLock />, value: '₹0', label: 'Free, no account needed' },
+  { id: 'free', icon: <IconOpenLock />, value: '₹0', label: 'Free to use' },
 ]
 
 /** Above HIGH_RISK_THRESHOLD, so this legitimately earns alert red. */
@@ -174,8 +178,8 @@ export default function CasePreview() {
           </h2>
           <span className="preview__rule" aria-hidden="true" />
           <p className="section__lede lead">
-            Upload what you have. Argus reads it, orders it, scores it, and tells you the next
-            thing to do about it.
+            Upload what you have. Argus reads it, orders it, scores it, and shows you what the
+            case is still missing.
           </p>
 
           <dl className="preview__stats">

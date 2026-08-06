@@ -32,18 +32,6 @@
   color: var(--text-tertiary);
 }
 
-.login__rolegrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 0.7rem;
-}
-
-/* No icon on these, unlike the evidence type cards, so the label needs its
- * own top margin rather than inheriting the icon's spacing. */
-.login__roles .typecard__label {
-  margin-top: 0;
-}
-
 .login__error {
   padding: 0.7rem 0.85rem;
   border-radius: var(--radius-md);

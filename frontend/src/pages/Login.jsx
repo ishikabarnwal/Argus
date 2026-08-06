@@ -6,24 +6,14 @@ import './Login.css'
 /**
  * Sign in and create account, one form with two modes.
  *
- * The role choice on signup is a prototype shortcut: real investigator
- * accounts would be issued, not self-selected. It is exposed here because
- * there is no admin surface to issue them from, and the reviewer needs a way
- * to see the investigator view at all.
+ * Signup has no account-type choice. An investigator account can read every
+ * case in the system, which is not something the person asking for it should
+ * be the one to decide — the API ignores any role sent with a signup, and
+ * granting one is a database edit (see "Accounts and roles" in the README).
+ *
+ * Signing *in* is unchanged: an account that has been granted the role lands
+ * on its case list rather than on the upload screen.
  */
-
-const ROLES = [
-  {
-    id: 'user',
-    label: 'I was targeted',
-    hint: 'Build a case from your own evidence',
-  },
-  {
-    id: 'investigator',
-    label: 'I review cases',
-    hint: 'Read-only access across all cases',
-  },
-]
 
 export default function Login() {
   const navigate = useNavigate()
@@ -34,7 +24,6 @@ export default function Login() {
   const [mode, setMode] = useState('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [role, setRole] = useState('user')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
@@ -47,7 +36,7 @@ export default function Login() {
 
     try {
       const account = isSignup
-        ? await signUp({ email, password, role })
+        ? await signUp({ email, password })
         : await signIn({ email, password })
 
       // Back to whatever they were trying to reach, or somewhere useful for
@@ -130,31 +119,6 @@ export default function Login() {
             />
             {isSignup && <p className="login__note text-caption">At least 8 characters.</p>}
           </div>
-
-          {isSignup && (
-            <fieldset className="login__field login__roles">
-              <legend className="login__label label-caps">Account type</legend>
-              <div className="login__rolegrid">
-                {ROLES.map((option) => (
-                  <label
-                    className={`typecard${role === option.id ? ' typecard--on' : ''}`}
-                    key={option.id}
-                  >
-                    <input
-                      className="sr-only"
-                      type="radio"
-                      name="role"
-                      value={option.id}
-                      checked={role === option.id}
-                      onChange={() => setRole(option.id)}
-                    />
-                    <span className="typecard__label">{option.label}</span>
-                    <span className="typecard__hint">{option.hint}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          )}
 
           {/* Caution orange. Red is reserved for confirmed fraud signals, and
               a rejected password is not one. */}

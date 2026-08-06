@@ -3,6 +3,7 @@ const multer = require('multer');
 const Evidence = require('../models/Evidence');
 const Case = require('../models/Case');
 const { scoreCase, riskLabel } = require('../lib/riskScore');
+const { findGaps } = require('../lib/gaps');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
@@ -134,6 +135,8 @@ router.get('/:caseId', requireAuth, async (req, res) => {
     riskScore: caseDoc.riskScore,
     riskLabel: riskLabel(caseDoc.riskScore),
     evidenceCount: evidence.length,
+    // Computed here rather than stored on the case: see findGaps().
+    gaps: findGaps(evidence),
     evidence,
   });
 });

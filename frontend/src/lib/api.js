@@ -102,9 +102,10 @@ async function postJson(path, body) {
 
 /* ---- auth --------------------------------------------------------- */
 
-/** POST /api/auth/signup → { token, user } */
-export function signup({ email, password, role }) {
-  return postJson('/auth/signup', { email, password, role })
+/** POST /api/auth/signup → { token, user }. Always creates a 'user' account;
+ *  the API ignores any role sent with it. */
+export function signup({ email, password }) {
+  return postJson('/auth/signup', { email, password })
 }
 
 /** POST /api/auth/login → { token, user } */

@@ -12,17 +12,20 @@ export default function CtaBand() {
             Turn the pile into a <em>case</em>.
           </h2>
           <p className="section__lede lead">
-            Upload what you have. Argus will tell you what it found, what is missing, and what to
-            do about it.
+            Upload what you have. Argus will tell you what it found, what it scored, and what is
+            still missing.
           </p>
 
           <div className="cta-band__actions">
             <Link className="btn btn--primary" to="/start">
               Start a case
             </Link>
-            <button type="button" className="btn btn--ghost">
-              See a sample report
-            </button>
+            {/* Was a <button> with no handler, offering a report that does not
+                exist — a dead control in the tab order, promising a feature
+                twice over. Points at the preview section instead, which does. */}
+            <a className="btn btn--ghost" href="#preview">
+              See a case file
+            </a>
           </div>
 
           {/* Honest about what this build is. Argus is a prototype and the

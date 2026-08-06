@@ -1,7 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const { ROLES } = require('../models/User');
 const { signToken, requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -16,22 +15,24 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /**
  * POST /api/auth/signup
  *
- * Note the shortcut: the caller picks their own role, so anyone can sign up as
- * an investigator. That is wrong for anything real — investigator accounts
- * should be issued, not self-claimed — and is only acceptable because this is
- * a prototype with no admin surface to issue them from.
+ * Always creates a 'user'. Any role in the body is ignored rather than
+ * rejected: this is not a request we want to help anyone get right, and a 400
+ * naming the valid roles would advertise that 'investigator' is a thing worth
+ * asking for.
+ *
+ * Investigator accounts read every case in the system, so they have to be
+ * granted, not claimed. There is no admin surface to grant one from, so it is
+ * a database edit — see "Accounts and roles" in the README. The role is signed
+ * into the token, so it applies from that account's next sign-in.
  */
 router.post('/signup', async (req, res) => {
-  const { email, password, role = 'user' } = req.body || {};
+  const { email, password } = req.body || {};
 
   if (!email || !EMAIL_PATTERN.test(email)) {
     return res.status(400).json({ error: 'Enter a valid email address' });
   }
   if (!password || password.length < MIN_PASSWORD_LENGTH) {
     return res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters` });
-  }
-  if (!ROLES.includes(role)) {
-    return res.status(400).json({ error: `role must be one of ${ROLES.join(', ')}` });
   }
 
   const normalised = email.toLowerCase().trim();
@@ -42,7 +43,8 @@ router.post('/signup', async (req, res) => {
   const user = await User.create({
     email: normalised,
     password: await bcrypt.hash(password, BCRYPT_ROUNDS),
-    role,
+    // No role: the schema default is 'user', and not naming it here means
+    // there is no line to accidentally start feeding from the request body.
   });
 
   res.status(201).json({ token: signToken(user), user: user.toPublic() });
