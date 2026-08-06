@@ -245,7 +245,14 @@ MONGO_URI=mongodb+srv://...
 PORT=5000
 AI_SERVICE_URL=http://localhost:8000
 JWT_SECRET=<a long random string>
+CORS_ORIGINS=https://argus.vercel.app,http://localhost:5173
 ```
+
+`CORS_ORIGINS` is a comma-separated list of origins the browser may call the API from. It
+defaults to `http://localhost:5173`, so local development needs no entry. Set it when the
+frontend is deployed somewhere — a deployed frontend is a different origin from the API,
+which is the whole reason it exists. Trailing slashes are stripped, so a stray one is not
+the bug it usually is.
 
 ```ini
 # ai-service/.env
@@ -265,9 +272,10 @@ DEV_API_TARGET=http://localhost:5001
 anywhere in the app, and nothing about `localhost` appears in a production build. Setting
 it to an absolute URL is what you do to point the built frontend at a deployed API.
 
-> Doing that makes the calls genuinely cross-origin, and `backend/server.js` mounts no CORS
-> middleware. A deployed frontend talking to a deployed API needs one added; the proxy is
-> what lets local development get away without it.
+> Doing that makes the calls genuinely cross-origin. The API allows that, but only from
+> the origins in its `CORS_ORIGINS` — so deploying the frontend to a new URL means adding
+> that URL there as well. Miss it and the browser blocks every request while the API
+> itself looks perfectly healthy.
 
 `DEV_API_TARGET` only moves the dev proxy, for when `PORT` in `backend/.env` is not 5000.
 It is deliberately not `VITE_`-prefixed: it is a dev-server setting, and `VITE_` variables
@@ -317,9 +325,10 @@ cd frontend && npm run dev
 
 Open <http://localhost:5173>, create an account, and upload something.
 
-> The frontend calls `/api/*` and Vite proxies it to `:5000`. This keeps the request
-> same-origin, which is why the API needs no CORS layer. If you serve the frontend any
-> other way, add one.
+> The frontend calls `/api/*` and Vite proxies it to `:5000`, which keeps the request
+> same-origin and skips CORS entirely in development. Serve the frontend any other way
+> and the browser will start preflighting — see `CORS_ORIGINS` in
+> [Configuration](#configuration).
 
 ---
 
@@ -517,8 +526,20 @@ Two things to know about the free plan:
 - **`dockerfilePath` and `dockerContext` are relative to the repo root**, not to any
   service directory. `./Dockerfile` would be looked for at the top of the repo.
 
-Only the AI service is deployed. The API and frontend still run locally; point the API's
-`AI_SERVICE_URL` at the Render URL to use the deployed one.
+Only the AI service has a blueprint here. To run the API against it, point the API's
+`AI_SERVICE_URL` at the Render URL.
+
+When the frontend goes up as well — Vercel, or anywhere else — two settings have to agree,
+and nothing checks them for you:
+
+| Where | Setting | Value |
+|---|---|---|
+| Frontend | `VITE_API_URL` | the deployed API, e.g. `https://argus-api.onrender.com/api` |
+| API | `CORS_ORIGINS` | the deployed frontend, e.g. `https://argus.vercel.app` |
+
+Vercel gives each preview deployment its own URL, and those are not covered by the
+production origin. Add them to `CORS_ORIGINS` if you need previews to reach the API — a
+wildcard for `*.vercel.app` would let anyone's Vercel site call it from a browser.
 
 ---
 

@@ -1,11 +1,14 @@
 /**
  * Client for the Argus backend (backend/routes/evidence.js).
  *
- * Requests go to a relative /api path, which the Vite proxy forwards to
- * localhost:5000 — see the note in vite.config.js about CORS. Set
- * VITE_API_URL to point somewhere else (a deployed backend, say), and note
- * that doing so makes the calls genuinely cross-origin, at which point the
- * backend does need a CORS layer.
+ * Requests go to a relative /api path, which the Vite proxy forwards to the
+ * API in development. Set VITE_API_URL to point somewhere else — a deployed
+ * backend, say — and the calls become genuinely cross-origin.
+ *
+ * The backend answers those, but only from origins listed in its
+ * CORS_ORIGINS. Deploying this frontend to a new URL therefore means adding
+ * that URL there too, or every request will be blocked by the browser while
+ * the API itself looks perfectly healthy.
  */
 
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api'
