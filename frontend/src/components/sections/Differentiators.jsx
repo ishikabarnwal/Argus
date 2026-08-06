@@ -5,6 +5,11 @@ import { IconAction, IconGap, IconPerson } from '../Icons'
  * The three things Argus does that a generic evidence processor does not.
  * These are the product's actual differentiators, so they get the most
  * deliberate treatment on the page — including the one featured card.
+ *
+ * The featured card used to be "Action-first output", promising which portal,
+ * which form, which deadline. None of that is built — report generation is
+ * still on the roadmap in the README — so it now describes the scoring that
+ * is. Do not put the old copy back before there is something behind it.
  */
 const ITEMS = [
   {
@@ -15,11 +20,11 @@ const ITEMS = [
     href: '#evidence',
   },
   {
-    id: 'action',
+    id: 'scoring',
     icon: <IconAction />,
-    title: 'Action-first output',
-    body: 'Every case ends with what to do next: which portal, which form, which deadline. A report you can act on, not a document you have to interpret first.',
-    href: '#start',
+    title: 'Explainable risk scoring',
+    body: 'Every case comes back with a score out of 100 and the evidence it is still missing. Both are plain rules in one file rather than a model, so the number can be explained to the person it is about.',
+    href: '#preview',
     featured: true,
   },
   {
