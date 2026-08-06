@@ -10,6 +10,18 @@ IDs written out correctly.
 Argus takes those files, reads them, pulls out the entities that matter, scores the case,
 and files it all under one case ID.
 
+## Live
+
+| | |
+|---|---|
+| **App** | <https://theargus.vercel.app> |
+| **API** | <https://argus-backend-rgm6.onrender.com> |
+| **AI service** | <https://argus-ai-service.onrender.com> |
+
+All on free tiers, so the first request after an idle period can take up to a minute while
+the services wake. Sign up with anything — it is a prototype, and the data rule below is
+not decorative.
+
 ---
 
 ## What it does
@@ -245,7 +257,7 @@ MONGO_URI=mongodb+srv://...
 PORT=5000
 AI_SERVICE_URL=http://localhost:8000
 JWT_SECRET=<a long random string>
-CORS_ORIGINS=https://argus.vercel.app,http://localhost:5173
+CORS_ORIGINS=https://theargus.vercel.app,http://localhost:5173
 ```
 
 `CORS_ORIGINS` is a comma-separated list of origins the browser may call the API from. It
@@ -499,10 +511,11 @@ Not exposed to the browser.
 
 ---
 
-## Deploying the AI service
+## Deployment
 
-`render.yaml` is a Render Blueprint for the AI service, and it uses the **Docker** runtime
-rather than a native Python one. That is not a preference:
+All three services are live — see [Live](#live). `render.yaml` is a Render Blueprint for
+the AI service, and it uses the **Docker** runtime rather than a native Python one. That is
+not a preference:
 
 - The service needs **Tesseract**, a system binary. `pytesseract` only shells out to it.
 - Render's native runtimes build **without root**, so `apt-get install tesseract-ocr` in a
@@ -526,16 +539,16 @@ Two things to know about the free plan:
 - **`dockerfilePath` and `dockerContext` are relative to the repo root**, not to any
   service directory. `./Dockerfile` would be looked for at the top of the repo.
 
-Only the AI service has a blueprint here. To run the API against it, point the API's
-`AI_SERVICE_URL` at the Render URL.
+`render.yaml` covers the AI service only. The API is a second Render service and the
+frontend is on Vercel, both configured in their dashboards rather than here.
 
-When the frontend goes up as well — Vercel, or anywhere else — two settings have to agree,
-and nothing checks them for you:
+Three settings have to agree across them, and nothing checks that for you:
 
 | Where | Setting | Value |
 |---|---|---|
-| Frontend | `VITE_API_URL` | the deployed API, e.g. `https://argus-api.onrender.com/api` |
-| API | `CORS_ORIGINS` | the deployed frontend, e.g. `https://argus.vercel.app` |
+| Frontend (Vercel) | `VITE_API_URL` | `https://argus-backend-rgm6.onrender.com/api` |
+| API (Render) | `CORS_ORIGINS` | `https://theargus.vercel.app` |
+| API (Render) | `AI_SERVICE_URL` | `https://argus-ai-service.onrender.com` |
 
 Vercel gives each preview deployment its own URL, and those are not covered by the
 production origin. Add them to `CORS_ORIGINS` if you need previews to reach the API — a
@@ -587,6 +600,18 @@ anything in the one place it matters.
 **Numbers are set in monospace with `tabular-nums`.** Account numbers, UPI IDs and phone
 numbers are the evidence. A `0` misread as `O` in a complaint is a real failure, not a
 cosmetic one.
+
+---
+
+## Known limitations
+
+- **No email verification.** Any address works at signup, real or not.
+- **Original files are not stored.** Only the extracted text is kept; uploads are read and
+  discarded.
+- **Bank statement PDFs are not supported.** Export to CSV or text, or upload a screenshot.
+- **Investigator accounts are promoted by hand** in the database — there is no admin screen.
+- **Free-tier hosting sleeps.** The first request after an idle period can take up to a
+  minute.
 
 ---
 
