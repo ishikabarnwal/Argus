@@ -280,24 +280,6 @@
   border-color: color-mix(in srgb, var(--accent) 42%, transparent);
 }
 
-/* Tab straddling the top edge of the featured card. */
-.card__flag {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 0.3rem 0.85rem;
-  border-radius: 999px;
-  background: var(--accent-fill);
-  color: var(--accent-fill-text);
-  font-size: var(--text-caption);
-  font-weight: 700;
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
-  white-space: nowrap;
-  box-shadow: 0 2px 14px var(--glow-accent);
-}
-
 .card--centered .card__foot {
   padding-top: 0.75rem;
 }

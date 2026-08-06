@@ -59,7 +59,6 @@ export default function Differentiators() {
               delay={i * 0.08}
               className={`card card--centered${item.featured ? ' card--featured' : ''}`}
             >
-              {item.featured && <span className="card__flag">Most asked for</span>}
               <span className="card__badge">{item.icon}</span>
               <h3 className="card__title">{item.title}</h3>
               <p className="card__body">{item.body}</p>
