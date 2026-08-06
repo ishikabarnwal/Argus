@@ -1,0 +1,20 @@
+# The build context is this directory, and `COPY . .` takes everything in it
+# that is not listed here.
+#
+# Two of these matter beyond image size. .env holds the real GEMINI_API_KEY —
+# copying it would bake a live credential into every layer of the image, where
+# it survives even if a later layer deletes it. And venv/ is 222 MB of
+# Windows-built packages that would be useless in a Linux image anyway.
+#
+# Render builds from a clone of the repo, where both are gitignored and so
+# absent already. This file is what makes a local `docker build` behave the
+# same way, rather than quietly producing a different and leakier image.
+.env
+.env.*
+venv/
+__pycache__/
+*.pyc
+
+.git/
+.gitignore
+README.md

@@ -1,0 +1,44 @@
+# Render Blueprint — the AI service.
+#
+# Docker, not a native runtime, and that is the point of this file. The AI
+# service needs Tesseract, which is a system binary. Render's native runtimes
+# build without root, so `apt-get install tesseract-ocr` in a build command
+# fails with exit status 100 — apt cannot lock /var/lib/dpkg as a non-root
+# user. There is no Render field for apt packages either; `aptPackages` is a
+# Heroku idea, and so is the Aptfile. Render's documented answer for system
+# packages is to bring your own image, which is what ai-service/Dockerfile
+# does.
+#
+# Only the AI service is defined here. The API and frontend are not yet
+# deployed; adding them later means adding entries to this same file.
+
+services:
+  - type: web
+    name: argus-ai-service
+    runtime: docker
+
+    # Closest region to the users this is built for. Change it freely — it
+    # affects latency, not correctness, and the API calls this service on
+    # every single upload.
+    region: singapore
+    plan: free
+
+    # Both paths are relative to the REPO ROOT, not to any service directory,
+    # and that is worth being exact about: `./Dockerfile` would be looked for
+    # at the top of the repo and the deploy would fail before it started.
+    # dockerContext is what the Dockerfile's `COPY . .` copies, so it is the
+    # service directory rather than the repo.
+    dockerfilePath: ./ai-service/Dockerfile
+    dockerContext: ./ai-service
+
+    # The liveness route already in main.py. Render uses it to decide when a
+    # deploy is actually serving rather than merely started.
+    healthCheckPath: /health
+
+    envVars:
+      # sync: false means Render prompts for the value and never reads it
+      # from this file. The key must not be committed — see the data rule in
+      # docs/PROJECT_NOTES.md. Note this is only prompted when the Blueprint
+      # is first created; adding it later is a dashboard edit.
+      - key: GEMINI_API_KEY
+        sync: false

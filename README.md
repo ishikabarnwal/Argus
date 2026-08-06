@@ -469,6 +469,38 @@ Not exposed to the browser.
 
 ---
 
+## Deploying the AI service
+
+`render.yaml` is a Render Blueprint for the AI service, and it uses the **Docker** runtime
+rather than a native Python one. That is not a preference:
+
+- The service needs **Tesseract**, a system binary. `pytesseract` only shells out to it.
+- Render's native runtimes build **without root**, so `apt-get install tesseract-ocr` in a
+  build command fails with **exit status 100** — apt cannot lock `/var/lib/dpkg`.
+- Render has **no configuration field for apt packages**. `aptPackages` and `Aptfile` are
+  Heroku conventions and do nothing here.
+
+So the packages are installed in `ai-service/Dockerfile`, where the build runs as root.
+`tesseract-ocr-eng` is listed explicitly alongside `tesseract-ocr`: the language data is a
+*recommended* package, and the image installs with `--no-install-recommends`, so leaving it
+implicit gives a working binary that cannot read anything.
+
+To deploy: point Render at the repo as a Blueprint and supply `GEMINI_API_KEY` when
+prompted. It is marked `sync: false`, so the key is never read from this file.
+
+Two things to know about the free plan:
+
+- **It sleeps after inactivity, and a cold start is slow** — this image is not small. The
+  API calls this service on every upload and waits for it, so the first upload after an
+  idle period can take long enough to look like a failure.
+- **`dockerfilePath` and `dockerContext` are relative to the repo root**, not to any
+  service directory. `./Dockerfile` would be looked for at the top of the repo.
+
+Only the AI service is deployed. The API and frontend still run locally; point the API's
+`AI_SERVICE_URL` at the Render URL to use the deployed one.
+
+---
+
 ## Project structure
 
 ```
@@ -490,6 +522,7 @@ argus/
 │   ├── models/                   User, Case, Evidence
 │   └── routes/                   auth, cases, evidence
 ├── ai-service/                   FastAPI
+│   ├── Dockerfile                Tesseract + the app — see Deploying
 │   ├── main.py                   routes
 │   ├── ocr.py                    Tesseract
 │   ├── entity_extraction.py      Gemini call + error translation
