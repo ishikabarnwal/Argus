@@ -15,7 +15,7 @@
  * "more evidence, more confirmed pattern" rule can only live at case level.
  */
 
-const { list } = require('./entities')
+const { list, parseAmount } = require('./entities')
 
 /** Points per rule. Adjust here; nothing else hard-codes these. */
 const POINTS = {
@@ -44,19 +44,6 @@ const BANDS = [
   { ceiling: 65, level: 'medium', label: 'Medium risk' },
   { ceiling: MAX_SCORE, level: 'high', label: 'High risk' },
 ]
-
-/**
- * Pull a number out of whatever the model called an amount: "₹25,000",
- * "Rs 25000", "1,00,000" (Indian grouping is only commas), or a bare number.
- * Returns null when there is no number in there at all.
- */
-function parseAmount(value) {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null
-  if (typeof value !== 'string') return null
-
-  const match = value.replace(/[,\s]/g, '').match(/\d+(?:\.\d+)?/)
-  return match ? Number(match[0]) : null
-}
 
 /**
  * Score one piece of evidence on its own, 0-100.

@@ -134,6 +134,26 @@
   --gap: var(--gap-400);
   --verify: var(--verify-400);
 
+  /* Relationship graph — the only categorical palette in the product.
+   *
+   * Three groups, not one hue per entity type, and the count is forced: red
+   * is reserved, caution orange is indistinguishable from the brand gold at
+   * mark size, and gap violet already means "missing evidence" on this same
+   * screen. That leaves blue, gold and green, and a fourth hue would have
+   * had to be invented against a locked palette.
+   *
+   * These exact steps were chosen by running the pairs through a CVD check
+   * rather than by eye: every pair clears the colour-blind and normal-vision
+   * separation floors and 3:1 against the surface, in both themes. Blue is
+   * the only one that differs by theme. Do not substitute steps without
+   * re-running that check — the near neighbours fail it.
+   *
+   * Entity type within a group is carried by mark shape, so identity never
+   * rests on colour alone. */
+  --entity-person: var(--blue-500);
+  --entity-handle: var(--gold-600);
+  --entity-money: var(--verify-600);
+
   --focus-ring: var(--gold-400);
 
   --glow-accent: rgba(232, 163, 61, 0.2);
@@ -216,6 +236,13 @@
   --caution: var(--caution-600);
   --gap: var(--gap-600);
   --verify: var(--verify-600);
+
+  /* Only the blue moves on paper — blue-500 sits above the light band, and
+   * blue-600 is what re-passed the check against a white surface. Gold and
+   * green hold in both themes. */
+  --entity-person: var(--blue-600);
+  --entity-handle: var(--gold-600);
+  --entity-money: var(--verify-600);
 
   --focus-ring: var(--gold-800);
 

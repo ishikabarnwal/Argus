@@ -4,6 +4,7 @@ const Evidence = require('../models/Evidence');
 const Case = require('../models/Case');
 const { scoreCase, riskLabel } = require('../lib/riskScore');
 const { findGaps } = require('../lib/gaps');
+const { buildGraph } = require('../lib/graph');
 const { canRead } = require('../lib/access');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
@@ -167,6 +168,9 @@ router.get('/:caseId', requireAuth, async (req, res) => {
     evidenceCount: evidence.length,
     // Computed here rather than stored on the case: see findGaps().
     gaps: findGaps(evidence),
+    // Derived for the same reason, and cheap: it is a pass over the entities
+    // already loaded, with nothing to keep in sync if the rules change.
+    graph: buildGraph(evidence),
     evidence,
   });
 });

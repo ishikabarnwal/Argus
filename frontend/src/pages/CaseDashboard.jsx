@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import CaseGraph from '../components/CaseGraph'
 import { IconChat, IconGap, IconImage, IconStatement } from '../components/Icons'
 import { downloadReport, fetchCase } from '../lib/api'
 import { riskColorVar } from '../lib/risk'
@@ -345,6 +346,14 @@ export default function CaseDashboard() {
                   <EvidenceCard item={item} key={item._id} />
                 ))}
               </div>
+            </section>
+
+            {/* Last, because it is a summary of everything above it: the
+                connections only mean something once you have seen what they
+                were drawn from. */}
+            <section className="casesection">
+              <p className="label-caps casesection__label">Connections</p>
+              <CaseGraph graph={caseFile.graph} evidenceCount={evidence.length} />
             </section>
           </>
         )}

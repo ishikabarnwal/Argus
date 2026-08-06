@@ -73,12 +73,12 @@ A working prototype, not a finished product. Being specific about the line:
 - OCR and entity extraction pipeline
 - Rule-based case risk scoring, recomputed on every upload
 - Missing-evidence detection — three rules, surfaced on the dashboard in gap violet
+- Relationship graph — which entities turn up together, and which recur across evidence
 - Case list and case dashboard — evidence cards, entity tags, timeline, raw text
 - PDF case report — score, entities, gaps and a suggested next step, downloadable
 - Landing page, light and dark themes
 
 **Designed but not built**
-- Relationship graph across entities.
 - Storing the uploaded file itself. Screenshots are OCR'd in memory and discarded — only
   the extracted text is kept.
 - Automated tests.
@@ -186,6 +186,42 @@ uploaded a bank statement" is an absence, not a confirmed fraud signal.
 **They inherit every miss the extraction made.** An amount the model did not pick up is an
 amount that cannot be flagged as unsupported, so a case with no gaps is not a case with
 nothing missing.
+
+---
+
+## Relationship graph
+
+`backend/lib/graph.js`, returned on `GET /api/evidence/:caseId` as `{ nodes, edges }` and
+drawn on the case dashboard.
+
+One rule: **two entities are connected when they appear in the same piece of evidence.**
+Nothing is inferred that the evidence does not literally contain. What that surfaces is
+corroboration — a node's `evidenceCount` is how many documents it turned up in, and an
+edge's `weight` is how many held the pair together. A UPI ID with a count of 2 is the same
+handle reached two ways.
+
+Nodes are names, phone numbers, UPI IDs, bank accounts and amounts. Dates and urgency
+keywords are deliberately excluded: nearly every document has both, so they would connect
+to everything and say nothing.
+
+**Matching is normalised, display is not.** A chat saying `Rs 45,000` and a statement line
+reading `45000.00` are the same payment, and comparing raw text would miss the single most
+useful link on the case. So amounts are matched by value, names and UPI IDs case- and
+space-insensitively, and phone numbers on their last ten digits — while every node is
+still labelled exactly as it was written.
+
+| Group | Colour | Types |
+|---|---|---|
+| Person | blue | Names |
+| Handle | gold | Phone numbers, UPI IDs, bank accounts |
+| Money | green | Amounts |
+
+Three colours rather than one per type, and the count is forced: red is reserved for
+confirmed fraud, caution orange is indistinguishable from the brand gold at mark size, and
+gap violet already means "missing evidence" on the same screen. The exact steps were
+chosen by running every pair through a colour-blindness check rather than by eye — near
+neighbours in the palette fail it. Type within a group is carried by mark shape, so
+identity never rests on colour alone.
 
 ---
 
@@ -389,6 +425,18 @@ The whole case. Returns `404` if the case does not exist **or** is not yours.
       "values": ["scam@okicici"]
     }
   ],
+  "graph": {
+    "nodes": [
+      { "id": "phone:9888877777", "type": "phone", "value": "+91 98888 77777", "evidenceCount": 1 },
+      { "id": "upi_id:scam@okicici", "type": "upi_id", "value": "scam@okicici", "evidenceCount": 1 },
+      { "id": "amount:#75000", "type": "amount", "value": "Rs 75,000", "evidenceCount": 1 }
+    ],
+    "edges": [
+      { "source": "phone:9888877777", "target": "upi_id:scam@okicici", "weight": 1 },
+      { "source": "phone:9888877777", "target": "amount:#75000", "weight": 1 },
+      { "source": "upi_id:scam@okicici", "target": "amount:#75000", "weight": 1 }
+    ]
+  },
   "evidence": [
     {
       "_id": "...",
@@ -435,6 +483,7 @@ argus/
 │   ├── lib/riskScore.js          scoring rules — the file to adjust
 │   ├── lib/gaps.js               missing-evidence rules
 │   ├── lib/entities.js           reading the model's entity object safely
+│   ├── lib/graph.js              relationship graph — co-occurrence rules
 │   ├── lib/report.js             the PDF, laid out with pdfkit
 │   ├── lib/access.js             who may read a case
 │   ├── middleware/auth.js        JWT signing, requireAuth, requireRole
