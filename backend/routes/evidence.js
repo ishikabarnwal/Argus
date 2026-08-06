@@ -6,6 +6,7 @@ const { scoreCase, riskLabel } = require('../lib/riskScore');
 const { findGaps } = require('../lib/gaps');
 const { buildGraph } = require('../lib/graph');
 const { canRead } = require('../lib/access');
+const { storeOriginal } = require('../lib/storage');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
@@ -112,9 +113,10 @@ router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), 
     ({ text: rawText } = await ocrResponse.json());
   }
 
-  // An empty file and a screenshot OCR could make nothing of both land here.
-  // Without this they reach Evidence.create(), where rawText is required, and
-  // come back as a 500 — a validation problem reported as a server fault.
+  // An empty file, a screenshot OCR could make nothing of, and a scanned PDF
+  // with no text layer all land here. Without this they reach
+  // Evidence.create(), where rawText is required, and come back as a 500 — a
+  // validation problem reported as a server fault.
   if (!rawText.trim()) {
     return res.status(400).json({ error: 'No readable text in that upload' });
   }
@@ -132,11 +134,34 @@ router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), 
   }
   const extractedEntities = await extractResponse.json();
 
+  // Kept last, and never allowed to fail the upload.
+  //
+  // By this point the file has been read and a Gemini request has been spent
+  // on it. Losing all of that because object storage was briefly unreachable
+  // would be the wrong trade: evidence with no stored original is still a
+  // timeline entry, still scored, still part of the case. The record simply
+  // carries no fileUrl, the dashboard offers no link, and nothing claims an
+  // original exists when it does not.
+  let stored = null;
+  if (req.file) {
+    try {
+      stored = await storeOriginal({
+        buffer: req.file.buffer,
+        originalName: req.file.originalname,
+        caseId,
+      });
+    } catch (error) {
+      console.error('Storing the original upload failed:', error.message);
+    }
+  }
+
   const evidence = await Evidence.create({
     type,
     rawText,
     extractedEntities,
     caseId,
+    fileUrl: stored?.url,
+    fileName: stored?.name,
   });
 
   // The new document changes both the base score and the corroboration bonus,

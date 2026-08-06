@@ -230,6 +230,22 @@ function EvidenceCard({ item }) {
         </p>
       )}
 
+      {/* Only when the original was actually kept. Pasted text has no file,
+          and neither do uploads made while storage was switched off — an
+          offer to view an original that is not there would be worse than no
+          offer at all. */}
+      {item.fileUrl && (
+        <a
+          className="efile__original"
+          href={item.fileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View original{item.fileName ? ` — ${item.fileName}` : ''}
+          <span className="sr-only"> (opens in a new tab)</span>
+        </a>
+      )}
+
       {item.rawText && (
         <details className="efile__raw">
           <summary>Raw text</summary>

@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from google.genai.errors import ClientError
 
+from documents import extract_text_from_file
 from entity_extraction import describe_gemini_error, extract_entities
-from ocr import extract_text_from_image
 
 load_dotenv()
 
@@ -17,16 +17,24 @@ def health():
 
 @app.post("/ocr")
 async def ocr(file: UploadFile = File(...)):
-    image_bytes = await file.read()
-    text = extract_text_from_image(image_bytes)
-    return {"text": text}
+    """
+    File in, text out. Images go through Tesseract, PDFs through their own
+    text layer — see documents.py.
+
+    An empty string is a valid answer, not a failure: a scanned PDF has no
+    text layer and a blank screenshot has nothing to read. The caller decides
+    what to do about that, and the API already answers 400 rather than
+    storing evidence with nothing in it.
+    """
+    data = await file.read()
+    return {"text": extract_text_from_file(data)}
 
 
 @app.post("/extract")
 async def extract(file: UploadFile | None = File(None), text: str | None = Form(None)):
     if file is not None:
-        image_bytes = await file.read()
-        source_text = extract_text_from_image(image_bytes)
+        data = await file.read()
+        source_text = extract_text_from_file(data)
     elif text is not None:
         source_text = text
     else:

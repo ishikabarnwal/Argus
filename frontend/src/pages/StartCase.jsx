@@ -32,8 +32,8 @@ const TYPES = [
   {
     id: 'bank_statement',
     label: 'Bank statement',
-    hint: 'Text or CSV export, or a screenshot',
-    accept: '.txt,.csv,image/*',
+    hint: 'PDF, CSV or text export, or a screenshot',
+    accept: '.pdf,.txt,.csv,image/*',
     icon: <IconStatement />,
   },
 ]

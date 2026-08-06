@@ -47,9 +47,17 @@ Upload a piece of evidence and Argus will:
 |---|---|---|
 | WhatsApp export | `.txt` from *Export chat* | Read directly as text |
 | Screenshot | PNG / JPG | Tesseract OCR |
-| Bank statement | `.txt` / `.csv`, or a screenshot | Text directly, or OCR |
+| Bank statement | `.pdf`, `.txt` / `.csv`, or a screenshot | PDF text layer, text directly, or OCR |
 
 Three types, deliberately. The prototype does not claim to handle anything else.
+
+A PDF is read through its own text layer rather than OCR'd — a statement exported from a
+bank is laid-out text, not a picture of text, and rasterising it would turn exact account
+numbers into guessed ones. A scanned PDF has no text layer and so comes back empty.
+
+The original file is kept as well as the text it produced, and linked from the evidence
+card. OCR misreads digits often enough that the original is sometimes the only way to
+settle what a number really was.
 
 ### Accounts and roles
 
@@ -82,7 +90,8 @@ A working prototype, not a finished product. Being specific about the line:
 **Built and working**
 - Email/password accounts, JWT sessions, the two roles above
 - Upload screen — drag-and-drop, click-to-browse, or paste text
-- OCR and entity extraction pipeline
+- OCR, PDF text extraction, and the entity extraction pipeline
+- Original uploads stored on Cloudinary and linked from the evidence card
 - Rule-based case risk scoring, recomputed on every upload
 - Missing-evidence detection — three rules, surfaced on the dashboard in gap violet
 - Relationship graph — which entities turn up together, and which recur across evidence
@@ -91,8 +100,8 @@ A working prototype, not a finished product. Being specific about the line:
 - Landing page, light and dark themes
 
 **Designed but not built**
-- Storing the uploaded file itself. Screenshots are OCR'd in memory and discarded — only
-  the extracted text is kept.
+- Reading scanned PDFs. Only the text layer is used; a PDF of photographed pages is not
+  OCR'd.
 - Automated tests.
 
 ---
@@ -258,7 +267,14 @@ PORT=5000
 AI_SERVICE_URL=http://localhost:8000
 JWT_SECRET=<a long random string>
 CORS_ORIGINS=https://theargus.vercel.app,http://localhost:5173
+CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud-name>
 ```
+
+`CLOUDINARY_URL` is copied straight from the Cloudinary dashboard and read by their SDK
+without further setup. It is **optional**: leave it out and uploads still work and are
+still extracted, they just are not kept — the API says which at startup. Storing an
+original never fails an upload either; if Cloudinary is unreachable the evidence is saved
+without a link and the error is logged.
 
 `CORS_ORIGINS` is a comma-separated list of origins the browser may call the API from. It
 defaults to `http://localhost:5173`, so local development needs no entry. Set it when the
@@ -415,13 +431,18 @@ role.
 |---|---|---|
 | `caseId` | yes | Any string. The UI generates `CASE-<year>-<4 digits>` |
 | `type` | yes | `whatsapp` \| `screenshot` \| `bank_statement` |
-| `file` | either | An image, read by OCR — or a `.txt`/`.csv`, read directly |
+| `file` | either | An image (OCR), a `.pdf` (text layer), or a `.txt`/`.csv` (read directly) |
 | `text` | either | Raw text, skips OCR |
 
-The API decides which of those a file is, by MIME type or extension. A WhatsApp export can
-therefore be posted as a plain file upload; it is not sent to Tesseract, which cannot open
-it. A file with no readable text in it — empty, or a screenshot OCR could make nothing of
-— returns `400` rather than being stored blank.
+The API decides which of those a file is: text by MIME type or extension, PDF by the
+`%PDF-` header rather than the filename. A WhatsApp export can therefore be posted as a
+plain file upload; it is not sent to Tesseract, which cannot open it. A file with no
+readable text in it — empty, a screenshot OCR could make nothing of, or a scanned PDF —
+returns `400` rather than being stored blank.
+
+Uploaded files are stored on Cloudinary when `CLOUDINARY_URL` is set, and the response
+carries `fileUrl` and `fileName`. Both are absent for pasted text, and absent if storage
+is off or failed; storing an original is never allowed to fail the upload.
 
 Returns `201` with the stored evidence document, and rescores the case. Uploading to a
 case ID owned by another account returns `403`, checked *before* any OCR or model call so
@@ -549,6 +570,7 @@ Three settings have to agree across them, and nothing checks that for you:
 | Frontend (Vercel) | `VITE_API_URL` | `https://argus-backend-rgm6.onrender.com/api` |
 | API (Render) | `CORS_ORIGINS` | `https://theargus.vercel.app` |
 | API (Render) | `AI_SERVICE_URL` | `https://argus-ai-service.onrender.com` |
+| API (Render) | `CLOUDINARY_URL` | from the Cloudinary dashboard |
 
 Vercel gives each preview deployment its own URL, and those are not covered by the
 production origin. Add them to `CORS_ORIGINS` if you need previews to reach the API — a
@@ -573,12 +595,14 @@ argus/
 │   ├── lib/graph.js              relationship graph — co-occurrence rules
 │   ├── lib/report.js             the PDF, laid out with pdfkit
 │   ├── lib/access.js             who may read a case
+│   ├── lib/storage.js            keeping the original upload (Cloudinary)
 │   ├── middleware/auth.js        JWT signing, requireAuth, requireRole
 │   ├── models/                   User, Case, Evidence
 │   └── routes/                   auth, cases, evidence
 ├── ai-service/                   FastAPI
 │   ├── Dockerfile                Tesseract + the app — see Deploying
 │   ├── main.py                   routes
+│   ├── documents.py              is this a PDF or an image, and how to read it
 │   ├── ocr.py                    Tesseract
 │   ├── entity_extraction.py      Gemini call + error translation
 │   └── prompts.py                the extraction prompt
@@ -606,9 +630,10 @@ cosmetic one.
 ## Known limitations
 
 - **No email verification.** Any address works at signup, real or not.
-- **Original files are not stored.** Only the extracted text is kept; uploads are read and
-  discarded.
-- **Bank statement PDFs are not supported.** Export to CSV or text, or upload a screenshot.
+- **Scanned PDFs are not read.** Text is taken from the PDF's own text layer, so a PDF
+  that is only photographs of pages comes back empty. Upload a screenshot instead.
+- **Original files need `CLOUDINARY_URL`.** Without it uploads still work and are still
+  extracted, but the originals are not kept.
 - **Investigator accounts are promoted by hand** in the database — there is no admin screen.
 - **Free-tier hosting sleeps.** The first request after an idle period can take up to a
   minute.

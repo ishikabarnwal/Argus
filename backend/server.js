@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const evidenceRouter = require('./routes/evidence');
 const authRouter = require('./routes/auth');
 const casesRouter = require('./routes/cases');
+const { storageEnabled } = require('./lib/storage');
 
 /**
  * Origins the browser may call this API from.
@@ -75,6 +76,13 @@ mongoose
     // Logged because a CORS misconfiguration is otherwise invisible from the
     // server side — it looks like a working API and a broken browser.
     console.log(`CORS allowing: ${allowedOrigins.join(', ')}`);
+    // Likewise: with storage off, uploads succeed and originals quietly are
+    // not kept. Better to say so once at boot than to discover it later.
+    console.log(
+      storageEnabled()
+        ? 'File storage: Cloudinary'
+        : 'File storage: off (set CLOUDINARY_URL to keep original uploads)',
+    );
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })
   .catch((err) => {
