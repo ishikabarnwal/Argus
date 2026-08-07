@@ -68,6 +68,45 @@ function isTextFile(file) {
   );
 }
 
+/** Statuses the platform returns when nothing is listening behind it yet. */
+const UPSTREAM_DOWN = [502, 503, 504];
+
+/** Enough of a real error to be useful, not enough to be a wall of text. */
+const MAX_DETAIL = 400;
+
+/**
+ * Explain a failed ai-service call.
+ *
+ * The service sleeps on free hosting and takes about half a minute to wake.
+ * While it does, the platform in front of it answers with its own styled HTML
+ * error page — and this used to forward that page verbatim as `detail`, so an
+ * entire HTML document, base64 font data and all, was rendered on the upload
+ * screen. Nothing in it told the user that waiting would fix it.
+ *
+ * So a body that starts with markup is treated as infrastructure noise and
+ * dropped, and an unreachable service is reported as 503 with the one fact
+ * that matters. Same reasoning as describe_gemini_error() in the ai-service:
+ * a condition that clears itself should say so rather than read as a crash.
+ */
+async function upstreamFailure(res, response, endpoint) {
+  const body = await response.text();
+
+  if (UPSTREAM_DOWN.includes(response.status)) {
+    return res.status(503).json({
+      error:
+        'The AI service is not responding. On free hosting it sleeps after a spell of ' +
+        'inactivity and takes about half a minute to wake — try the upload again shortly.',
+    });
+  }
+
+  const isMarkup = body.trimStart().startsWith('<');
+
+  return res.status(502).json({
+    error: `ai-service ${endpoint} request failed`,
+    ...(isMarkup ? {} : { detail: body.slice(0, MAX_DETAIL) }),
+  });
+}
+
 // Investigators are read-only, so uploading is restricted to the 'user' role.
 router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), async (req, res) => {
   const { caseId, type, text } = req.body;
@@ -107,8 +146,7 @@ router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), 
       body: ocrForm,
     });
     if (!ocrResponse.ok) {
-      const detail = await ocrResponse.text();
-      return res.status(502).json({ error: 'ai-service /ocr request failed', detail });
+      return upstreamFailure(res, ocrResponse, '/ocr');
     }
     ({ text: rawText } = await ocrResponse.json());
   }
@@ -129,8 +167,7 @@ router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), 
     body: extractForm,
   });
   if (!extractResponse.ok) {
-    const detail = await extractResponse.text();
-    return res.status(502).json({ error: 'ai-service /extract request failed', detail });
+    return upstreamFailure(res, extractResponse, '/extract');
   }
   const extractedEntities = await extractResponse.json();
 
