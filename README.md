@@ -25,6 +25,7 @@ Upload a piece of evidence, and Argus will:
 - **Read it** — Tesseract OCR for screenshots, the text layer for PDFs, direct text for chat exports
 - **Extract entities** — names, phone numbers, UPI IDs, bank accounts, amounts, dates and urgency language, via Gemini
 - **Score it** — a rule-based fraud risk score out of 100, recomputed on every upload
+  (0–30 low, 31–65 medium, 66–100 high)
 - **Flag what is missing** — the evidence type the case still needs, given what it found
 - **Map it** — a graph of which entities turn up together across evidence
 - **Report it** — the whole case as a downloadable PDF
@@ -142,7 +143,7 @@ Everything except signup and login needs `Authorization: Bearer <token>`.
 - Scanned PDFs are not read; only a PDF's existing text layer is used.
 - Investigator accounts are promoted by hand in the database.
 - Free-tier hosting sleeps, so the first request after idle is slow.
-- No automated tests.
+- Only the scoring and gap rules are tested (`cd backend && npm test`); nothing else is.
 
 ---
 
