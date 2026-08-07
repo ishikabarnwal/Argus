@@ -18,6 +18,7 @@ import Login from './pages/Login.jsx'
 import StartCase from './pages/StartCase.jsx'
 import CasesList from './pages/CasesList.jsx'
 import CaseDashboard from './pages/CaseDashboard.jsx'
+import NotFound from './pages/NotFound.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -55,6 +56,12 @@ createRoot(document.getElementById('root')).render(
                 </RequireAuth>
               }
             />
+
+            {/* Last, and unguarded. Vercel rewrites unmatched paths to
+                index.html so refreshes work, so this is what actually tells
+                someone the address is wrong — and being told that should not
+                require signing in first. */}
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>
