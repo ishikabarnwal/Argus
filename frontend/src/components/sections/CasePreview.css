@@ -75,7 +75,7 @@
  * is the order a definition list already gives us. */
 .stat__value {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 48, 'wght' 700, 'SOFT' 0, 'WONK' 0;
+  font-variation-settings: 'opsz' 22, 'wght' 700, 'wdth' 100;
   font-size: var(--text-h5);
   line-height: 1.1;
   color: var(--accent);

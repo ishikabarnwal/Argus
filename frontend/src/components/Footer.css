@@ -30,7 +30,7 @@
 
 .footer__name {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 48, 'wght' 600, 'SOFT' 0, 'WONK' 1;
+  font-variation-settings: 'opsz' 24, 'wght' 700, 'wdth' 100;
   font-size: var(--text-lead);
   color: var(--text-primary);
 }

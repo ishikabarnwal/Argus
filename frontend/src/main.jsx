@@ -3,9 +3,10 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 // Self-hosted variable fonts — no CDN dependency at runtime.
-// Fraunces uses `full.css` rather than the default entry so the SOFT and
-// WONK axes are available, not just wght/opsz.
-import '@fontsource-variable/fraunces/full.css'
+// Bricolage uses `standard.css` rather than the default entry so all three of
+// its axes are available (opsz, wdth, wght), not wght alone. It has no custom
+// axes, so there is no `full.css` here the way Fraunces needed one.
+import '@fontsource-variable/bricolage-grotesque/standard.css'
 import '@fontsource-variable/inter'
 import '@fontsource-variable/jetbrains-mono'
 

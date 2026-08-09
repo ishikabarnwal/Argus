@@ -112,7 +112,7 @@
   align-items: center;
   gap: 0.55rem;
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 48, 'wght' 600, 'SOFT' 0, 'WONK' 1;
+  font-variation-settings: 'opsz' 24, 'wght' 700, 'wdth' 100;
   font-size: var(--text-lead);
   letter-spacing: var(--tracking-tight);
   color: var(--text-primary);

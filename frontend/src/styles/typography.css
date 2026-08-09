@@ -1,8 +1,8 @@
 /* ARGUS — typography
  *
- * Fraunces (variable)      display  — editorial gravitas, dossier weight
- * Inter (variable)         body     — tall x-height survives small sizes on dark
- * JetBrains Mono (variable) data    — slashed zero, disambiguated 1/l/I
+ * Bricolage Grotesque (variable) display — distinctive, modern editorial
+ * Inter (variable)               body    — tall x-height survives small sizes on dark
+ * JetBrains Mono (variable)      data    — slashed zero, disambiguated 1/l/I
  *
  * The mono choice is functional, not decorative: this app renders account
  * numbers, UPI IDs and phone numbers as primary evidence. A user misreading
@@ -10,53 +10,81 @@
  *
  * Font files are imported in main.jsx (self-hosted via @fontsource-variable,
  * so there is no CDN dependency at runtime).
+ *
+ * Display used to be Fraunces, a serif. The pairing did half the work of
+ * telling display and body apart on its own — serif against sans is a
+ * difference nobody has to be told about. Bricolage is a grotesque, so that
+ * free separation is gone and the presets below have to buy it back: display
+ * runs at 650+ against Inter's 400 body, and every display level sets its own
+ * optical size. Do not flatten those weights toward Inter's; the two faces
+ * both have large x-heights and will start to read as one.
  */
 
 :root {
-  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-display: 'Bricolage Grotesque Variable', 'Inter Variable', system-ui, sans-serif;
   --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Scale — 1.25 ratio: 12 14 16 20 25 31 39 49 61 */
+  /* Scale — 12 13 15 18 22 26 32 40 50.
+   *
+   * Progressive, not a single ratio: ~1.25 between the display steps, easing
+   * to ~1.1 at the bottom. The cut from the old 1.25-throughout scale is
+   * weighted toward the top (h1 -18%, body -6%, caption held) because the
+   * crowding was always a display-size problem — 61px headlines. Body does
+   * not follow them down past 15px, and caption holds at 12px: this is a
+   * product people read while something bad is happening to them. */
   --text-caption: 0.75rem;
-  --text-small: 0.875rem;
-  --text-body: 1rem;
-  --text-lead: 1.25rem;
-  --text-h5: 1.5625rem;
-  --text-h4: 1.9375rem;
-  --text-h3: 2.4375rem;
-  --text-h2: 3.0625rem;
-  --text-h1: 3.8125rem;
+  --text-small: 0.8125rem;
+  --text-body: 0.9375rem;
+  --text-lead: 1.125rem;
+  --text-h5: 1.375rem;
+  --text-h4: 1.625rem;
+  --text-h3: 2rem;
+  --text-h2: 2.5rem;
+  --text-h1: 3.125rem;
 
-  /* Fluid display sizes — interpolate between scale steps, never past them. */
-  --text-h1-fluid: clamp(2.4375rem, 1.8rem + 3.2vw, 3.8125rem);
-  --text-h2-fluid: clamp(1.9375rem, 1.55rem + 1.9vw, 3.0625rem);
-  --text-h3-fluid: clamp(1.5625rem, 1.35rem + 1.1vw, 2.4375rem);
+  /* Fluid display sizes — interpolate between scale steps, never past them.
+   * Each one still crosses its floor and ceiling at the same viewport widths
+   * the old scale did, so only the sizes moved, not the breakpoints. */
+  --text-h1-fluid: clamp(2rem, 1.48rem + 2.6vw, 3.125rem);
+  --text-h2-fluid: clamp(1.625rem, 1.32rem + 1.48vw, 2.5rem);
+  --text-h3-fluid: clamp(1.375rem, 1.22rem + 0.79vw, 2rem);
 
-  --leading-tight: 1.05;
-  --leading-snug: 1.25;
+  /* Tighter than the Fraunces settings on both counts. A grotesque at display
+   * size carries closer spacing than a serif does — the serif needed the room
+   * for its brackets and terminals, and this does not. */
+  --leading-tight: 1.02;
+  --leading-snug: 1.18;
   --leading-normal: 1.6;
   --leading-mono: 1.5;
 
-  --tracking-display: -0.02em;
-  --tracking-tight: -0.01em;
+  --tracking-display: -0.03em;
+  --tracking-tight: -0.015em;
   --tracking-normal: 0;
   --tracking-caps: 0.08em;
 }
 
 /* ------------------------------------------------------------------ *
- * Fraunces axis presets                                               *
+ * Bricolage axis presets                                              *
  *                                                                     *
- * SOFT stays at 0 throughout — sharp terminals are the whole point of  *
- * the forensic register; softening them turns the face friendly.      *
- * WONK (angled, irregular alternates) is the character dial: on for    *
- * the hero, off everywhere else, so the weirdness stays a one-time     *
- * event rather than a texture.                                        *
+ * Three axes, each doing one job:                                     *
+ *                                                                     *
+ *   opsz  the character dial, and the direct replacement for the WONK  *
+ *         axis this page used to run on. Bricolage sharpens its        *
+ *         contrast and closes its spacing as opsz climbs, so each      *
+ *         level is set near the size it actually renders at and the    *
+ *         hero is pushed past it — that is what makes the hero read as *
+ *         a one-time event rather than merely bigger.                  *
+ *   wght  separation from Inter. See the note at the top of the file:  *
+ *         these are the numbers keeping display and body apart now     *
+ *         that the serif is gone.                                      *
+ *   wdth  held at 100 throughout. It is here to be explicit that it is *
+ *         a deliberate constant, not an axis nobody noticed.           *
  * ------------------------------------------------------------------ */
 
 .display-hero {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 144, 'wght' 600, 'SOFT' 0, 'WONK' 1;
+  font-variation-settings: 'opsz' 96, 'wght' 700, 'wdth' 100;
   font-size: var(--text-h1-fluid);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-display);
@@ -65,7 +93,7 @@
 .display-1,
 h1 {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 120, 'wght' 600, 'SOFT' 0, 'WONK' 0;
+  font-variation-settings: 'opsz' 72, 'wght' 650, 'wdth' 100;
   font-size: var(--text-h1-fluid);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-display);
@@ -74,7 +102,7 @@ h1 {
 .display-2,
 h2 {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 72, 'wght' 600, 'SOFT' 0, 'WONK' 0;
+  font-variation-settings: 'opsz' 48, 'wght' 650, 'wdth' 100;
   font-size: var(--text-h2-fluid);
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-display);
@@ -83,14 +111,15 @@ h2 {
 .display-3,
 h3 {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 48, 'wght' 600, 'SOFT' 0, 'WONK' 0;
+  font-variation-settings: 'opsz' 32, 'wght' 650, 'wdth' 100;
   font-size: var(--text-h3-fluid);
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-tight);
 }
 
-/* h4 and below hand over to Inter. Fraunces at small sizes loses its
- * contrast and starts to look merely old-fashioned. */
+/* h4 and below hand over to Inter. Below about 26px the two faces converge —
+ * both are grotesques with a large x-height — so there is nothing left to be
+ * gained from the display face and Inter is the better text font. */
 h4 {
   font-family: var(--font-body);
   font-weight: 600;

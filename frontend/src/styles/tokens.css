@@ -354,5 +354,9 @@
   --radius-lg: 12px;
 
   --content-max: 72rem;
-  --section-pad: clamp(4.5rem, 11vh, 8rem);
+  /* Down from clamp(4.5rem, 11vh, 8rem) alongside the type scale. Vertical
+   * rhythm is measured against text size, not against the viewport, so
+   * leaving it where it was after a 15% type cut would have widened every gap
+   * on the page in relative terms — the opposite of the intent. */
+  --section-pad: clamp(3.5rem, 8.5vh, 6rem);
 }
