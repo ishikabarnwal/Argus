@@ -1,0 +1,26 @@
+/* Built like .risk-badge in components.css — same pill, same tint maths — so
+ * the two sit beside each other on a case header without one shouting. The
+ * difference is the dot and the lighter weight: a status is a state of play,
+ * a risk score is a finding, and the finding should carry more voice. */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.26rem 0.7rem;
+  border-radius: 999px;
+  font-size: var(--text-caption);
+  font-weight: 620;
+  white-space: nowrap;
+  color: var(--status);
+  background: color-mix(in srgb, var(--status) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--status) 40%, transparent);
+}
+
+.status-badge__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+}

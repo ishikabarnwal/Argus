@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import StatusBadge from '../components/StatusBadge'
 import { fetchCases } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { riskColorVar } from '../lib/risk'
@@ -89,6 +90,8 @@ export default function CasesList() {
                     {row.evidenceCount} item{row.evidenceCount === 1 ? '' : 's'}
                     {row.ownerEmail ? ` · ${row.ownerEmail}` : ''}
                   </span>
+
+                  <StatusBadge status={row.status} />
 
                   <span
                     className="risk-badge"

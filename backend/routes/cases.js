@@ -2,8 +2,9 @@ const express = require('express');
 const Case = require('../models/Case');
 const Evidence = require('../models/Evidence');
 const { canRead } = require('../lib/access');
+const { isStatus, rejectionReason } = require('../lib/caseStatus');
 const { renderCaseReport } = require('../lib/report');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ router.get('/', requireAuth, async (req, res) => {
   res.json({
     cases: cases.map((c) => ({
       caseId: c.caseId,
+      status: c.status,
       riskScore: c.riskScore,
       riskLabel: c.riskLabel,
       evidenceCount: c.evidenceCount,
@@ -32,6 +34,49 @@ router.get('/', requireAuth, async (req, res) => {
       ...(isInvestigator ? { ownerEmail: c.userId?.email ?? null } : {}),
     })),
   });
+});
+
+/**
+ * PATCH /api/cases/:caseId/status — move a case along.
+ *
+ * Restricted to the 'user' role, so investigators cannot set it. That is the
+ * same line drawn everywhere else: they read every case and change none of
+ * them, and a status is a claim about what its owner has done.
+ *
+ * Any status may follow any other. Cases do not run in a line — see the note
+ * in lib/caseStatus.js — so the only refusal is a case with nothing in it
+ * calling itself ready to file.
+ */
+router.patch('/:caseId/status', requireAuth, requireRole('user'), async (req, res) => {
+  const { caseId } = req.params;
+  const { status } = req.body || {};
+
+  if (!isStatus(status)) {
+    return res.status(400).json({ error: 'Unknown case status' });
+  }
+
+  const caseDoc = await Case.findOne({ caseId });
+
+  // 404 for a case that is not theirs, as everywhere else — see lib/access.js.
+  if (!caseDoc || !canRead(caseDoc, req.user)) {
+    return res.status(404).json({ error: 'No case with that ID' });
+  }
+
+  // Counted rather than read off the case: evidenceCount there is a
+  // denormalised copy maintained by uploads, and a rule about whether a case
+  // can make a claim should be checked against the evidence itself.
+  const evidenceCount = await Evidence.countDocuments({ caseId });
+
+  const reason = rejectionReason(status, evidenceCount);
+  if (reason) {
+    return res.status(409).json({ error: reason });
+  }
+
+  caseDoc.status = status;
+  caseDoc.updatedAt = new Date();
+  await caseDoc.save();
+
+  res.json({ caseId, status: caseDoc.status });
 });
 
 /**

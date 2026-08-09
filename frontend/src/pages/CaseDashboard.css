@@ -20,6 +20,33 @@
   gap: 0.75rem;
 }
 
+/* Status and "add evidence" — the case's only two controls, kept together at
+ * the end of the header. Baseline-aligned so the select and the button sit on
+ * the same line despite the select carrying a label above it. */
+.casehead__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+}
+
+.casestatus__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--text-tertiary);
+}
+
+/* Narrower than a form field — four short words is the longest it holds. */
+.casestatus__select {
+  min-width: 11rem;
+  padding-block: 0.55rem;
+}
+
+.casestatus__error {
+  margin-top: 0.5rem;
+  max-width: 22rem;
+}
+
 /* The case ID is an identifier people read back over the phone, so it is set
  * in mono rather than in the display face the other page titles use. */
 .casehead__id {

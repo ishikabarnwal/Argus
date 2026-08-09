@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import CaseGraph from '../components/CaseGraph'
 import { IconChat, IconGap, IconImage, IconStatement } from '../components/Icons'
-import { downloadReport, fetchCase } from '../lib/api'
+import StatusBadge from '../components/StatusBadge'
+import { downloadReport, fetchCase, updateCaseStatus } from '../lib/api'
+import { useAuth } from '../lib/auth'
+import { STATUSES } from '../lib/caseStatus'
 import { riskColorVar } from '../lib/risk'
 import './CaseDashboard.css'
 
@@ -111,6 +114,72 @@ function Gaps({ gaps }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * Where the case has got to, and — for its owner — a way to change it.
+ *
+ * A select rather than four buttons: there is exactly one value, the options
+ * are mutually exclusive, and a native control gets keyboard handling and a
+ * usable mobile picker for free.
+ *
+ * Investigators see the badge and no control. They read every case and change
+ * none, which the API enforces independently.
+ */
+function CaseStatus({ caseId, status, onChange }) {
+  const { user } = useAuth()
+  const fieldId = useId()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const canEdit = user?.role !== 'investigator'
+
+  async function handleChange(event) {
+    const next = event.target.value
+    setSaving(true)
+    setError(null)
+    try {
+      const saved = await updateCaseStatus(caseId, next)
+      onChange(saved.status)
+    } catch (err) {
+      // The API refuses a case with no evidence calling itself ready to file,
+      // and says why. That reason is worth showing as written.
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!canEdit) return <StatusBadge status={status} />
+
+  return (
+    <div className="casestatus">
+      <label className="casestatus__label label-caps" htmlFor={fieldId}>
+        Status
+      </label>
+      <select
+        className="input casestatus__select"
+        id={fieldId}
+        value={status ?? 'building'}
+        onChange={handleChange}
+        disabled={saving}
+      >
+        {STATUSES.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+
+      {/* Caution, not alert — a refused change is a rule, not a fraud
+          finding. */}
+      {error && (
+        <p className="casestate casestate--bad casestatus__error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -299,6 +368,7 @@ export default function CaseDashboard() {
                   {caseFile.riskScore} · {caseFile.riskLabel}
                 </span>
               )}
+              {caseFile && <StatusBadge status={caseFile.status} />}
             </div>
             {evidence && (
               <p className="section__lede lead casehead__count">
@@ -309,9 +379,21 @@ export default function CaseDashboard() {
             )}
           </div>
 
-          <Link className="btn btn--primary" to={`/start?case=${encodeURIComponent(caseId)}`}>
-            Add evidence
-          </Link>
+          {/* Status sits beside the way to add evidence, because the two are
+              the case's only controls and they belong together. */}
+          <div className="casehead__actions">
+            {caseFile && (
+              <CaseStatus
+                caseId={caseId}
+                status={caseFile.status}
+                onChange={(status) => setCaseFile((current) => ({ ...current, status }))}
+              />
+            )}
+
+            <Link className="btn btn--primary" to={`/start?case=${encodeURIComponent(caseId)}`}>
+              Add evidence
+            </Link>
+          </div>
         </header>
 
         {error && (

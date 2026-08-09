@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { STATUSES, DEFAULT_STATUS } = require('../lib/caseStatus');
 
 /**
  * A case is the unit a victim actually has: one fraud, several pieces of
@@ -40,6 +41,16 @@ const caseSchema = new mongoose.Schema({
   },
   evidenceCount: {
     type: Number,
+    required: true,
+  },
+  // The one field on a case that a person sets rather than a rule derives.
+  // Deliberately absent from the $set in recalculateCase(): rescoring a case
+  // must not quietly reset where its owner said it had got to. The default
+  // applies on insert only, which is when the case is first uploaded to.
+  status: {
+    type: String,
+    enum: STATUSES,
+    default: DEFAULT_STATUS,
     required: true,
   },
   updatedAt: {

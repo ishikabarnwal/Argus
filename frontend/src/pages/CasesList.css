@@ -18,9 +18,12 @@
   list-style: none;
 }
 
+/* Four tracks: id, meta, status, score. The middle one takes all the slack,
+ * so both badges stay hard against the right edge however long an email in
+ * the meta column runs. */
 .caselist__row {
   display: grid;
-  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.6rem 1.25rem;
   padding: 1rem 1.25rem;
@@ -46,14 +49,15 @@
   justify-self: end;
 }
 
-/* The badge is the one thing that must stay on its own line when the row
- * wraps — a score sitting beside a truncated email reads as belonging to it. */
+/* The badges are what must stay on their own line when the row wraps — a
+ * score sitting beside a truncated email reads as belonging to it. */
 @media (max-width: 560px) {
   .caselist__row {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .caselist__row .risk-badge {
+  .caselist__row .risk-badge,
+  .caselist__row .status-badge {
     justify-self: start;
   }
 }

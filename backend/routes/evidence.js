@@ -172,7 +172,10 @@ async function upstreamFailure(res, response, endpoint) {
 
 // Investigators are read-only, so uploading is restricted to the 'user' role.
 router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), async (req, res) => {
-  const { caseId, type, text } = req.body;
+  // `|| {}` as in the auth routes: a request with a content type nothing here
+  // parses leaves req.body undefined, and destructuring it threw — turning a
+  // malformed request into a 500 instead of the 400 below.
+  const { caseId, type, text } = req.body || {};
 
   if (!caseId) {
     return res.status(400).json({ error: 'caseId is required' });
@@ -286,6 +289,7 @@ router.get('/:caseId', requireAuth, async (req, res) => {
 
   res.json({
     caseId,
+    status: caseDoc.status,
     riskScore: caseDoc.riskScore,
     riskLabel: riskLabel(caseDoc.riskScore),
     evidenceCount: evidence.length,

@@ -127,6 +127,23 @@ export async function fetchCases({ signal } = {}) {
 }
 
 /**
+ * PATCH /api/cases/:caseId/status → { caseId, status }.
+ *
+ * Owner only; the API refuses it for investigators, who read every case and
+ * change none. A case with no evidence cannot be set to 'ready_to_file' and
+ * comes back 409 with the reason, which is worth showing as written.
+ */
+export async function updateCaseStatus(caseId, status) {
+  const response = await fetch(`${API_BASE}/cases/${encodeURIComponent(caseId)}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ status }),
+  })
+  if (!response.ok) throw await errorFrom(response)
+  return response.json()
+}
+
+/**
  * POST /api/cases/:caseId/report — the case as a PDF, saved to disk.
  *
  * The token lives in localStorage rather than a cookie, so the browser cannot

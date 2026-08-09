@@ -29,6 +29,7 @@ Upload a piece of evidence, and Argus will:
 - **Flag what is missing** — the evidence type the case still needs, given what it found
 - **Map it** — a graph of which entities turn up together across evidence
 - **Report it** — the whole case as a downloadable PDF
+- **Track it** — *building* → *ready to file* → *filed* → *resolved*, set by the case's owner
 
 Evidence accumulates under one case ID, and the original files are kept, not just the text
 read out of them.
@@ -150,6 +151,7 @@ Everything except signup and login needs `Authorization: Bearer <token>`.
 |---|---|
 | `POST /api/auth/signup` · `/login` · `GET /api/auth/me` | Accounts and sessions |
 | `GET /api/cases` | Cases the caller may see |
+| `PATCH /api/cases/:caseId/status` | Move a case along — owner only |
 | `POST /api/cases/:caseId/report` | The case as a PDF |
 | `POST /api/evidence/upload` | Add evidence — multipart, `file` or `text` |
 | `GET /api/evidence/:caseId` | The case: score, gaps, graph and evidence |
