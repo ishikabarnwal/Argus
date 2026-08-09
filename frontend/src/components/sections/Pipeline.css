@@ -1,0 +1,212 @@
+/* The pipeline diagram.
+ *
+ * The rail is horizontal on a wide screen and vertical on a narrow one, and
+ * the connector has to follow. Rather than swap elements, both orientations
+ * share one animated custom property: Framer drives --draw from 0 to 1 and
+ * the media query decides whether that is a scaleX or a scaleY. The fallback
+ * in var(--draw, 1) is the finished line, so a page with the animation
+ * disabled — or with the script never reaching this component — shows a drawn
+ * connector rather than none at all.
+ */
+
+.pipeline__rail {
+  position: relative;
+}
+
+.pipeline__track {
+  position: absolute;
+  /* Node is 3.25rem; this puts the line through its centre. */
+  top: 1.625rem;
+  /* Stops at the centre of the first and last node rather than at the edge of
+   * the section — a connector that runs past the things it connects reads as
+   * a rule, not as a route. Each of the four cells is 25% wide. */
+  left: 12.5%;
+  right: 12.5%;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--border-default);
+  overflow: hidden;
+}
+
+.pipeline__track-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* Blue at the input end, gold at the output — the same two jobs those
+   * colours have everywhere else here, and the gradient is what makes the
+   * direction legible without an arrowhead. */
+  background: linear-gradient(90deg, var(--secondary-fill), var(--accent-fill));
+  transform-origin: left center;
+  transform: scaleX(var(--draw, 1));
+}
+
+.pipeline__stages {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.pstage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 0.4rem;
+  border: 0;
+  background: none;
+  text-align: center;
+  cursor: pointer;
+}
+
+.pstage__node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  /* Opaque, not transparent: the connector passes behind the node and would
+   * otherwise be visible straight through it. */
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--secondary);
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.pstage:hover .pstage__node {
+  border-color: var(--border-strong);
+}
+
+.pstage--on .pstage__node {
+  color: var(--accent);
+}
+
+/* The travelling ring. One element for the whole rail, moved by layoutId. */
+.pstage__ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-fill);
+  box-shadow: 0 0 22px var(--glow-accent);
+}
+
+.pstage__icon {
+  display: grid;
+  place-items: center;
+}
+
+.pstage__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Sits on the node's edge, over the connector, like a station number. */
+.pstage__step {
+  position: absolute;
+  right: -0.3rem;
+  bottom: -0.3rem;
+  display: grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-default);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+
+.pstage--on .pstage__step {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent-fill) 50%, var(--border-default));
+}
+
+.pstage__title {
+  font-size: var(--text-small);
+  font-weight: 650;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
+  text-wrap: balance;
+  transition: color 0.18s ease;
+}
+
+.pstage:hover .pstage__title,
+.pstage--on .pstage__title {
+  color: var(--text-primary);
+}
+
+/* ---- the panel ------------------------------------------------------ */
+
+.pipeline__panel {
+  max-width: 44rem;
+  margin: clamp(1.85rem, 4.5vh, 2.6rem) auto 0;
+  padding: clamp(1.15rem, 2.4vw, 1.6rem);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  /* Holds its height across a stage change so the section below does not jump
+   * as the text swaps. Sized to the longest entry. */
+  min-height: 11.5rem;
+}
+
+.pipeline__step {
+  color: var(--accent);
+  margin-bottom: 0.6rem;
+}
+
+.pipeline__detail {
+  font-size: var(--text-small);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+  margin-bottom: 0.9rem;
+}
+
+/* ---- narrow ---------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .pipeline__track {
+    /* Through the centre of the node column instead of the node row. */
+    top: 1.625rem;
+    bottom: 1.625rem;
+    left: 1.625rem;
+    right: auto;
+    width: 2px;
+    height: auto;
+    transform: translateX(-1px);
+  }
+
+  .pipeline__track-fill {
+    background: linear-gradient(180deg, var(--secondary-fill), var(--accent-fill));
+    transform-origin: center top;
+    transform: scaleY(var(--draw, 1));
+  }
+
+  .pipeline__stages {
+    grid-template-columns: 1fr;
+    gap: 1.15rem;
+  }
+
+  /* Node beside the label rather than above it, so every row is exactly one
+   * node tall and the vertical connector's end insets stay constant. */
+  .pstage {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0;
+    text-align: left;
+  }
+
+  .pstage__title {
+    font-size: var(--text-body);
+  }
+
+  .pipeline__panel {
+    min-height: 0;
+  }
+}
