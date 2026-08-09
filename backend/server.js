@@ -6,6 +6,7 @@ const evidenceRouter = require('./routes/evidence');
 const authRouter = require('./routes/auth');
 const casesRouter = require('./routes/cases');
 const { storageEnabled } = require('./lib/storage');
+const { invitesEnabled } = require('./lib/inviteCode');
 
 /**
  * Origins the browser may call this API from.
@@ -82,6 +83,12 @@ mongoose
       storageEnabled()
         ? 'File storage: Cloudinary'
         : 'File storage: off (set CLOUDINARY_URL to keep original uploads)',
+    );
+    // Whether the door exists, never what the key is.
+    console.log(
+      invitesEnabled()
+        ? 'Investigator invite code: set'
+        : 'Investigator invite code: not set (signup can only create victims)',
     );
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })

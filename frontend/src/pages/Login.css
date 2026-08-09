@@ -32,6 +32,15 @@
   color: var(--text-tertiary);
 }
 
+/* Lower case inside an uppercased label, so "optional" reads as an aside
+ * rather than as part of the field's name. */
+.login__optional {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
 .login__error {
   padding: 0.7rem 0.85rem;
   border-radius: var(--radius-md);

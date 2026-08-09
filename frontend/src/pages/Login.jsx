@@ -6,13 +6,17 @@ import './Login.css'
 /**
  * Sign in and create account, one form with two modes.
  *
- * Signup has no account-type choice. An investigator account can read every
- * case in the system, which is not something the person asking for it should
- * be the one to decide — the API ignores any role sent with a signup, and
- * granting one is a database edit (see "Accounts and roles" in the README).
+ * Signup has no account-type choice — an investigator reads every case in the
+ * system, and that is not the asker's decision to make. What it has instead
+ * is an optional invite code, which the deployment's administrator sets and
+ * gives out privately.
  *
- * Signing *in* is unchanged: an account that has been granted the role lands
- * on its case list rather than on the upload screen.
+ * A wrong code raises nothing. It quietly produces an ordinary account,
+ * because a form that says "that code is wrong" is a free oracle for guessing
+ * at it — see backend/lib/inviteCode.js. Someone who was given a real code
+ * will land on the case list; someone guessing learns only that they did not.
+ *
+ * Signing *in* is unchanged.
  */
 
 export default function Login() {
@@ -24,6 +28,7 @@ export default function Login() {
   const [mode, setMode] = useState('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
@@ -36,7 +41,7 @@ export default function Login() {
 
     try {
       const account = isSignup
-        ? await signUp({ email, password })
+        ? await signUp({ email, password, inviteCode })
         : await signIn({ email, password })
 
       // Back to whatever they were trying to reach, or somewhere useful for
@@ -119,6 +124,30 @@ export default function Login() {
             />
             {isSignup && <p className="login__note text-caption">At least 8 characters.</p>}
           </div>
+
+          {/* Optional, and last, because almost nobody filling this form has
+              one. Mono because it is a code to be transcribed exactly, and
+              autoComplete off so a browser never offers to remember it. */}
+          {isSignup && (
+            <div className="login__field">
+              <label className="login__label label-caps" htmlFor={`${fieldId}-invite`}>
+                Investigator invite code <span className="login__optional">(optional)</span>
+              </label>
+              <input
+                className="input input--mono"
+                id={`${fieldId}-invite`}
+                type="text"
+                value={inviteCode}
+                onChange={(event) => setInviteCode(event.target.value)}
+                autoComplete="off"
+                spellCheck="false"
+              />
+              <p className="login__note text-caption">
+                Leave this blank unless you were given a code. Investigators can read every
+                case on the system; everyone else gets an account that can only see their own.
+              </p>
+            </div>
+          )}
 
           {/* Caution orange. Red is reserved for confirmed fraud signals, and
               a rejected password is not one. */}

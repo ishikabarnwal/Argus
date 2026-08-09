@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const { grantsInvestigator } = require('../lib/inviteCode');
 const { signToken, requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -15,18 +16,15 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /**
  * POST /api/auth/signup
  *
- * Always creates a 'user'. Any role in the body is ignored rather than
- * rejected: this is not a request we want to help anyone get right, and a 400
- * naming the valid roles would advertise that 'investigator' is a thing worth
- * asking for.
+ * Creates a 'user', unless the request carries the investigator invite code.
+ * A `role` in the body is still ignored rather than rejected: the role is
+ * decided here, from the code, and never read from what the caller asked for.
  *
- * Investigator accounts read every case in the system, so they have to be
- * granted, not claimed. There is no admin surface to grant one from, so it is
- * a database edit — see "Accounts and roles" in the README. The role is signed
- * into the token, so it applies from that account's next sign-in.
+ * A wrong or absent code is not an error — it simply produces a victim
+ * account. See lib/inviteCode.js for why the form does not say so.
  */
 router.post('/signup', async (req, res) => {
-  const { email, password } = req.body || {};
+  const { email, password, inviteCode } = req.body || {};
 
   if (!email || !EMAIL_PATTERN.test(email)) {
     return res.status(400).json({ error: 'Enter a valid email address' });
@@ -43,8 +41,9 @@ router.post('/signup', async (req, res) => {
   const user = await User.create({
     email: normalised,
     password: await bcrypt.hash(password, BCRYPT_ROUNDS),
-    // No role: the schema default is 'user', and not naming it here means
-    // there is no line to accidentally start feeding from the request body.
+    // The only path to 'investigator'. Note what is *not* here: nothing reads
+    // req.body.role, so asking for the role directly still achieves nothing.
+    role: grantsInvestigator(inviteCode) ? 'investigator' : 'user',
   });
 
   res.status(201).json({ token: signToken(user), user: user.toPublic() });

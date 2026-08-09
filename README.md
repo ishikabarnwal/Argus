@@ -46,9 +46,24 @@ Three types, deliberately. The prototype does not claim to handle anything else.
 ### Accounts
 
 Two roles. A **user** owns the cases they create; an **investigator** can read every case
-but upload nothing. Signup always creates a user — investigator is granted in the database,
-not claimed on a form. A case you do not own is indistinguishable from one that does not
-exist.
+but upload nothing. A case you do not own is indistinguishable from one that does not exist.
+
+Signup creates a user unless it carries the **investigator invite code** — a secret set as
+`INVESTIGATOR_INVITE_CODE` and given out privately. Anything else, including a wrong code,
+a blank field, or a `role` in the request body, produces an ordinary user account. A wrong
+code raises no error: a form that says "that code is wrong" is a free oracle for guessing
+at it.
+
+With no code configured, nothing can self-register as an investigator. Either way the role
+can also be granted directly, which is the fallback if the code leaks or nobody set one:
+
+```js
+// mongosh, against the Argus database
+db.users.updateOne({ email: 'reviewer@example.com' }, { $set: { role: 'investigator' } })
+```
+
+The role is signed into the token, so a promoted account has to sign in again for it to
+apply.
 
 ---
 
@@ -95,7 +110,11 @@ JWT_SECRET=<a long random string>
 AI_SERVICE_URL=http://localhost:8000
 CORS_ORIGINS=http://localhost:5173
 CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud-name>
+INVESTIGATOR_INVITE_CODE=<a secret you share only with investigators>
 ```
+
+`INVESTIGATOR_INVITE_CODE` is optional. Leave it out and signup can only ever create
+victim accounts — see [Accounts](#accounts).
 
 ```ini
 # ai-service/.env
@@ -141,7 +160,8 @@ Everything except signup and login needs `Authorization: Bearer <token>`.
 
 - No email verification — any address works at signup.
 - Scanned PDFs are not read; only a PDF's existing text layer is used.
-- Investigator accounts are promoted by hand in the database.
+- Investigator access is a single shared invite code, not per-person invitations — if it
+  leaks, it has to be rotated for everyone.
 - Free-tier hosting sleeps, so the first request after idle is slow.
 - Only the scoring and gap rules are tested (`cd backend && npm test`); nothing else is.
 

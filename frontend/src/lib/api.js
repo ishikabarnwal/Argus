@@ -90,10 +90,16 @@ async function postJson(path, body) {
 
 /* ---- auth --------------------------------------------------------- */
 
-/** POST /api/auth/signup → { token, user }. Always creates a 'user' account;
- *  the API ignores any role sent with it. */
-export function signup({ email, password }) {
-  return postJson('/auth/signup', { email, password })
+/**
+ * POST /api/auth/signup → { token, user }.
+ *
+ * Creates a 'user' unless `inviteCode` matches the investigator code the
+ * deployment was configured with. A wrong code is not an error and gets an
+ * ordinary account — the API deliberately will not say which it was, so
+ * there is nothing here to report either.
+ */
+export function signup({ email, password, inviteCode }) {
+  return postJson('/auth/signup', { email, password, inviteCode })
 }
 
 /** POST /api/auth/login → { token, user } */
