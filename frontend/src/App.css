@@ -144,42 +144,6 @@
   text-decoration: none;
 }
 
-/* Who is signed in. Doubles as the link to their case list, so the identity
- * and the thing it gives access to are the same target. */
-.account {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  max-width: 12rem;
-  text-decoration: none;
-  color: var(--text-secondary);
-  transition: color 0.16s ease;
-}
-
-.account:hover {
-  color: var(--text-primary);
-}
-
-.account__email {
-  font-size: var(--text-caption);
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.account__role {
-  color: var(--accent);
-}
-
-/* The email is the first thing to go when the bar runs out of room — the role
- * chip and the sign-out control matter more than the address. */
-@media (max-width: 860px) {
-  .account {
-    display: none;
-  }
-}
-
 /* Visible only once focused, so keyboard users get past the nav. */
 .skip-link {
   position: absolute;

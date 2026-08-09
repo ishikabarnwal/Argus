@@ -117,3 +117,24 @@ export function IconStatement() {
     </svg>
   )
 }
+
+/** Plain cross — starting something, in the sidebar's icon-only rail. */
+export function IconPlus() {
+  return (
+    <svg {...base}>
+      <path d="M12 5.5v13" />
+      <path d="M5.5 12h13" />
+    </svg>
+  )
+}
+
+/** Arrow leaving an open-sided frame — on your way out. */
+export function IconSignOut() {
+  return (
+    <svg {...base}>
+      <path d="M9.5 20H5.5A1.5 1.5 0 0 1 4 18.5v-13A1.5 1.5 0 0 1 5.5 4h4" />
+      <path d="M15 8.5l3.5 3.5-3.5 3.5" />
+      <path d="M18.5 12H9.5" />
+    </svg>
+  )
+}

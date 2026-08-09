@@ -1,0 +1,53 @@
+/* Layout for the signed-in workspace: a fixed rail on the left, everything
+ * else to the right of it. */
+
+.workspace__main {
+  /* The rail is fixed, so it takes no space in flow — the content has to be
+   * moved out from under it. One gap for the rail's own inset, one for the
+   * space between the rail and the content. */
+  margin-left: calc(var(--sidebar-w) + var(--topbar-gap) * 2);
+}
+
+/* Pages are written for the public layout, where the top padding clears a
+ * fixed topbar. There is no topbar here, so that allowance is dead space at
+ * the top of every workspace screen. */
+.workspace__main .page {
+  padding-block-start: clamp(1.75rem, 5vh, 3rem);
+}
+
+/* Content is no longer centred in the viewport once a rail is taking room
+ * from one side, so give it the room back rather than leaving a wide gutter
+ * on the right of a screen that already lost width on the left. */
+.workspace__main .page__inner--wide {
+  max-width: 68rem;
+}
+
+.workspace__tools {
+  position: fixed;
+  z-index: 10;
+  top: var(--topbar-gap);
+  right: var(--topbar-gap);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ---- the rail's width, which the main column depends on --------------- */
+
+:root {
+  --sidebar-w: 15rem;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --sidebar-w: 3.6rem;
+  }
+}
+
+/* Below the rail's own inset the content column is thin, so drop the side
+ * padding the pages carry for a full-width layout. */
+@media (max-width: 560px) {
+  .workspace__main .page {
+    padding-inline: 0.9rem;
+  }
+}

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import StarsBackground from './components/StarsBackground'
 import ThemeToggle from './components/ThemeToggle'
 import TubelightNav from './components/TubelightNav'
@@ -8,20 +8,16 @@ import { useAuth } from './lib/auth'
 import './App.css'
 
 /**
- * Layout shared by every route: the star field, the floating topbar, and the
+ * Layout for the public pages: the star field, the floating topbar, and the
  * footer. Routes render into the <main> through the outlet.
+ *
+ * The signed-in screens use Workspace.jsx instead, which swaps the topbar for
+ * a sidebar. Both keep the star field and the same glass, so crossing between
+ * them does not feel like crossing between two products.
  */
 function App() {
   const { pathname, hash } = useLocation()
-  const navigate = useNavigate()
-  const { user, signOut } = useAuth()
-
-  function handleSignOut() {
-    signOut()
-    // Away from anything that needed the session, rather than letting the
-    // route guard bounce them to the login page a moment later.
-    navigate('/', { replace: true })
-  }
+  const { user } = useAuth()
 
   // BrowserRouter leaves the scroll position where it was, so arriving at
   // /start from halfway down the homepage lands you halfway down /start.
@@ -47,33 +43,27 @@ function App() {
 
         <TubelightNav />
 
+        {/* Marketing chrome only. Identity, sign-out and the case list moved
+            to the workspace sidebar when the signed-in half got its own
+            layout — this bar was carrying a section nav, a sign-in button, an
+            account chip and a call to action at the same time. What is left
+            is the one thing a visitor needs: a way in. */}
         <div className="topbar__actions">
           <ThemeToggle />
 
           {user ? (
-            <>
-              <Link className="account" to="/cases">
-                <span className="account__email">{user.email}</span>
-                <span className="account__role label-caps">
-                  {user.role === 'investigator' ? 'Investigator' : 'Victim'}
-                </span>
-              </Link>
-              <button className="btn btn--outline btn--sm" type="button" onClick={handleSignOut}>
-                Sign out
-              </button>
-            </>
+            <Link className="btn btn--primary btn--sm topbar__cta" to="/cases">
+              Open workspace
+            </Link>
           ) : (
-            <Link className="btn btn--outline btn--sm topbar__cta" to="/login">
-              Sign in
-            </Link>
-          )}
-
-          {/* Investigators are read-only, so the one action they cannot take
-              is not offered to them. */}
-          {user?.role !== 'investigator' && (
-            <Link className="btn btn--primary btn--sm topbar__cta" to="/start">
-              Start a case
-            </Link>
+            <>
+              <Link className="btn btn--outline btn--sm topbar__cta" to="/login">
+                Sign in
+              </Link>
+              <Link className="btn btn--primary btn--sm topbar__cta" to="/start">
+                Start a case
+              </Link>
+            </>
           )}
         </div>
       </header>
