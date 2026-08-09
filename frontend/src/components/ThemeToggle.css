@@ -1,32 +1,35 @@
+/* Icon-only theme switch. No pill, no label — see ThemeToggle.jsx.
+ *
+ * Square rather than round, and borderless until you point at it: this sits
+ * beside two real buttons in the topbar, and a third bordered control there
+ * made the bar read as three equal calls to action when only two of them are.
+ */
+
 .theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-default);
+  display: grid;
+  place-items: center;
+  /* 2.25rem is under the 44px touch target the rest of the product holds to,
+   * but this control has a full-size tap area on mobile via the padding on
+   * .topbar__actions' row height, and shrinking it is what keeps the capsule
+   * from being three-quarters chrome on a narrow screen. */
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: color 0.16s ease, border-color 0.16s ease;
+  transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .theme-toggle:hover {
-  color: var(--text-primary);
-  border-color: var(--border-strong);
-}
-
-.theme-toggle__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px var(--glow-accent);
-}
-
-.theme-toggle__label {
-  font-size: var(--text-caption);
-  font-weight: 600;
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
 }

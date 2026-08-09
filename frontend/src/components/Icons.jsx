@@ -161,6 +161,32 @@ export function IconCoins() {
   )
 }
 
+/** Sun — shown when light mode is what the button switches TO. */
+export function IconSun() {
+  return (
+    <svg {...base}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 3v2" />
+      <path d="M12 19v2" />
+      <path d="M3 12h2" />
+      <path d="M19 12h2" />
+      <path d="m5.6 5.6 1.4 1.4" />
+      <path d="m17 17 1.4 1.4" />
+      <path d="m18.4 5.6-1.4 1.4" />
+      <path d="m7 17-1.4 1.4" />
+    </svg>
+  )
+}
+
+/** Crescent — shown when dark mode is what the button switches TO. */
+export function IconMoon() {
+  return (
+    <svg {...base}>
+      <path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.4 8.4 0 1 0 10.2 10.2Z" />
+    </svg>
+  )
+}
+
 /** Plain cross — starting something, in the sidebar's icon-only rail. */
 export function IconPlus() {
   return (
