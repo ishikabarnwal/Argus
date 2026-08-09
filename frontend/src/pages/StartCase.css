@@ -24,7 +24,7 @@
 
 .start__types {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(11rem, 100%), 1fr));
   gap: 0.7rem;
 }
 
@@ -65,8 +65,8 @@
   height: 2.2rem;
   border-radius: 50%;
   color: var(--secondary);
-  background: color-mix(in srgb, var(--secondary) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--secondary) 30%, transparent);
+  background: var(--secondary-tint);
+  border: 1px solid var(--secondary-edge);
 }
 
 .typecard--on .typecard__icon {

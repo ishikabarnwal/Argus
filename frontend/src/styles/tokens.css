@@ -126,6 +126,12 @@
   --secondary-fill-text: #ffffff;
   --secondary-quiet: var(--blue-800);
 
+  /* The blue wash and edge under icon badges, chips and avatars. A token
+   * rather than a mix repeated in six files, because the right percentage is
+   * not the same in both themes — see the light block. */
+  --secondary-tint: color-mix(in srgb, var(--secondary-fill) 12%, transparent);
+  --secondary-edge: color-mix(in srgb, var(--secondary-fill) 30%, transparent);
+
   --alert: var(--alert-400);
   --alert-fill: var(--alert-600);
   --alert-fill-text: #ffffff;
@@ -228,6 +234,14 @@
   --secondary-fill: var(--blue-700);
   --secondary-fill-text: #ffffff;
   --secondary-quiet: var(--blue-200);
+
+  /* Stronger than the dark theme's, and deliberately so. On navy, a 12% wash
+   * of blue-500 sits on a background already close to it and reads as a
+   * glow. On white, the same wash of the much darker blue-700 all but
+   * disappears — the surface it has to separate from is at the far end of the
+   * scale rather than the near one. */
+  --secondary-tint: color-mix(in srgb, var(--secondary-fill) 14%, transparent);
+  --secondary-edge: color-mix(in srgb, var(--secondary-fill) 42%, transparent);
 
   --alert: var(--alert-600);
   --alert-fill: var(--alert-600);

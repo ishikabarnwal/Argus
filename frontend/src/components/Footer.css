@@ -55,6 +55,13 @@
   color: var(--accent);
 }
 
+/* The one link hover on the site with room to be blue. The tubelight nav's
+ * hover is tied to a gold lamp and the buttons are gold by definition, so
+ * this is where the secondary gets to behave like a link colour. */
+:root[data-theme='light'] .footer__nav a:hover {
+  color: var(--secondary);
+}
+
 @media (max-width: 560px) {
   .footer__tag {
     display: none;

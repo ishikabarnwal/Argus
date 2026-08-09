@@ -177,7 +177,7 @@
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
   gap: clamp(0.85rem, 2vw, 1.15rem);
   align-items: stretch;
 }
@@ -269,8 +269,8 @@
   height: 3rem;
   border-radius: 50%;
   color: var(--secondary);
-  background: color-mix(in srgb, var(--secondary) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--secondary) 30%, transparent);
+  background: var(--secondary-tint);
+  border: 1px solid var(--secondary-edge);
 }
 
 .card__badge svg {
@@ -389,4 +389,38 @@
 /* Anchors styled as buttons must not keep the global link underline. */
 a.btn {
   text-decoration: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * LIGHT-MODE BLUE                                                     *
+ *                                                                     *
+ * On dark, blue carries plenty without being asked to: it is the star  *
+ * field, the glow behind the brand marks, the low band of the risk     *
+ * scale. On paper every one of those either inverts to something else  *
+ * or fades to nothing, and the theme was left reading as gold and grey *
+ * with the secondary barely present.                                   *
+ *                                                                     *
+ * These hand blue back jobs it already has a token for rather than     *
+ * inventing new ones, and they are scoped to light: dark is unchanged. *
+ * The tint under icon badges and chips is handled upstream instead, by *
+ * --secondary-tint / --secondary-edge in tokens.css.                   *
+ * ------------------------------------------------------------------ */
+
+/* The secondary button, now secondary in colour as well as in weight.
+ * blue-700 is 8.6:1 on the light background, so this is a text-safe use. */
+:root[data-theme='light'] .btn--outline {
+  color: var(--secondary);
+  border-color: var(--secondary-edge);
+}
+
+:root[data-theme='light'] .btn--outline:hover {
+  color: var(--secondary-hover);
+  border-color: var(--secondary-fill);
+  background: var(--secondary-tint);
+}
+
+/* Section dividers. A neutral hairline on near-white is invisible anyway,
+ * so this one had nothing to lose and a colour to gain. */
+:root[data-theme='light'] .rule {
+  background: linear-gradient(90deg, transparent, var(--secondary-edge), transparent);
 }

@@ -148,8 +148,8 @@
   height: 2rem;
   border-radius: 50%;
   color: var(--secondary);
-  background: color-mix(in srgb, var(--secondary) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--secondary) 32%, transparent);
+  background: var(--secondary-tint);
+  border: 1px solid var(--secondary-edge);
   font-size: var(--text-caption);
   font-weight: 700;
 }
