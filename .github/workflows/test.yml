@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Read-only: this job builds nothing and publishes nothing.
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend unit tests
+    runs-on: ubuntu-latest
+
+    # Everything lives in backend/; the repo root holds no package.json.
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 20 is the version the README asks for, so that is the one worth
+      # proving. Developing on something newer is fine; shipping a floor
+      # nobody tests is not.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # ci, not install: it installs exactly the lockfile and fails if the two
+      # have drifted, which is the whole point of running this somewhere other
+      # than the machine that wrote them.
+      - run: npm ci
+
+      # The suites cover the scoring and gap rules — pure functions over plain
+      # objects, so no database, no keys, no services need to be up.
+      - run: npm test
