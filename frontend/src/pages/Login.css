@@ -1,16 +1,201 @@
-/* Sign in / create account. Reuses .card, .input, .btn, .segmented and
- * .typecard from the shared layer; only the arrangement is local. */
+/* Sign in / create account.
+ *
+ * A split: reassurance on the left, the form on the right, both over the same
+ * gold-and-blue orbs the homepage band uses. Controls are still .input, .btn
+ * and .segmented from the shared layer — only the arrangement and the panel
+ * around them are local.
+ */
 
-.login {
-  max-width: 34rem;
+.login-page {
+  display: flex;
+  align-items: center;
+  /* Centres the split vertically on a tall screen instead of leaving it
+   * hanging under the topbar. Padding is inside this because everything is
+   * border-box, so it still clears the capsule. */
+  min-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ---- orbs ------------------------------------------------------------ */
+
+.login-page__orbs {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.login-page__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+}
+
+.login-page__orb--gold {
+  width: min(32rem, 76vw);
+  height: min(32rem, 76vw);
+  top: -8%;
+  right: 2%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent-fill) 24%, transparent),
+    transparent 70%
+  );
+}
+
+.login-page__orb--blue {
+  width: min(28rem, 66vw);
+  height: min(28rem, 66vw);
+  bottom: -12%;
+  left: -4%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--secondary-fill) 24%, transparent),
+    transparent 70%
+  );
+}
+
+/* Glow is a dark-room effect. On paper it stains rather than lights. */
+:root[data-theme='light'] .login-page__orb {
+  opacity: 0.5;
+  filter: blur(80px);
+}
+
+/* ---- the split -------------------------------------------------------- */
+
+/* The form is first in the DOM and second in the grid. Column placement is
+ * explicit for both, so reading order and visual order can disagree on
+ * purpose — see the note in Login.jsx. */
+.login-split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4rem);
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+.login-aside {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.login-panel {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* ---- reassurance side -------------------------------------------------- */
+
+.login-aside__title {
+  font-size: var(--text-h3-fluid);
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.login-aside__points {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.1rem, 3vh, 1.6rem);
+  margin: clamp(1.75rem, 4vh, 2.5rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.login-aside__point {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+}
+
+.login-aside__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: var(--radius-md);
+  color: var(--secondary);
+  background: var(--secondary-tint);
+  border: 1px solid var(--secondary-edge);
+}
+
+.login-aside__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.login-aside__point-title {
+  font-size: var(--text-small);
+  font-weight: 650;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+.login-aside__point-body {
+  font-size: var(--text-small);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+/* ---- form side --------------------------------------------------------- */
+
+/* Glass, like the evidence band and the workspace rail. The orbs behind it
+ * are what make that worth doing — over a flat background a backdrop-filter
+ * is an expensive way to draw the same flat background. */
+.login-panel {
+  padding: clamp(1.4rem, 3vw, 2.1rem);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-lip);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .login-panel {
+    background: var(--bg-surface);
+  }
+}
+
+.login-panel__head {
+  margin-bottom: clamp(1.4rem, 3.5vh, 1.9rem);
+}
+
+/* Smaller than a page heading elsewhere. This one sits inside a panel rather
+ * than across a full column, and at the full h1 size it overran the form
+ * below it. */
+.login-panel__title {
+  font-size: var(--text-h3-fluid);
+}
+
+.login-panel__lede {
+  margin-top: 0.7rem;
+  font-size: var(--text-small);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-wrap: pretty;
 }
 
 .login__form {
-  gap: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
 }
 
 .login__modes {
-  align-self: flex-start;
+  align-self: stretch;
+}
+
+/* Two modes, equal weight — neither is the one you are meant to pick. */
+.login__modes .segmented__btn {
+  flex: 1;
 }
 
 .login__field {
@@ -23,7 +208,7 @@
 .login__label {
   display: block;
   padding: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.45rem;
   color: var(--text-tertiary);
 }
 
@@ -51,11 +236,42 @@
   overflow-wrap: anywhere;
 }
 
-.login__form .btn {
-  align-self: flex-start;
+/* Full width. There is one action on this panel and no reason to make it
+ * hunt for the left edge. */
+.login__submit {
+  align-self: stretch;
+  min-height: 2.75rem;
+  margin-top: 0.15rem;
 }
 
-.login__form .btn[disabled] {
+.login__submit[disabled] {
   opacity: 0.6;
   cursor: progress;
+}
+
+/* ---- narrow ------------------------------------------------------------ */
+
+@media (max-width: 860px) {
+  .login-split {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 32rem;
+  }
+
+  .login-panel {
+    grid-column: 1;
+  }
+
+  /* The panel is the nice-to-have; the form is the job. Rather than stack it
+   * below and push the submit button off a phone screen, it goes. Every fact
+   * in it is on /learn and in the README as well. */
+  .login-aside {
+    display: none;
+  }
+
+  /* Nothing left to centre against once it is a single column, and a short
+   * form floating mid-screen reads as an error state. */
+  .login-page {
+    align-items: flex-start;
+    min-height: 0;
+  }
 }
