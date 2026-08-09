@@ -255,9 +255,16 @@
   /* The star field inverts on paper: white dots would be invisible, so the
    * base layer becomes the locked blue. The accent layer follows the same
    * rule as gold text here — the brand gold is 2.0:1 on this background and
-   * would disappear, so it uses gold-800. */
-  --star: rgba(30, 76, 140, 0.3);
-  --star-accent: rgba(143, 94, 19, 0.32);
+   * would disappear, so it uses gold-800.
+   *
+   * Both alphas are near the dark theme's 0.55 rather than the 0.3 they
+   * started at, which is what made the field read as absent on paper. Hue was
+   * never the problem — this is already the locked blue. Thin dark marks on a
+   * light ground genuinely need more weight than light marks on a dark one,
+   * because a bright dot blooms over its own edges and a dark one does not,
+   * so equal alpha in both themes is not equal presence. */
+  --star: rgba(30, 76, 140, 0.6);
+  --star-accent: rgba(143, 94, 19, 0.55);
 
   /* Glass on paper is the case glassmorphism usually fails: a white tint on
    * a white page has nothing to separate it from what it sits on, so the bar
