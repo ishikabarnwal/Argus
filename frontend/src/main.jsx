@@ -15,6 +15,7 @@ import Workspace from './Workspace.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 import AuthProvider from './components/AuthProvider.jsx'
 import Home from './pages/Home.jsx'
+import Learn from './pages/Learn.jsx'
 import Login from './pages/Login.jsx'
 import StartCase from './pages/StartCase.jsx'
 import CasesList from './pages/CasesList.jsx'
@@ -29,6 +30,7 @@ createRoot(document.getElementById('root')).render(
           {/* Public: topbar and footer, for anyone at all. */}
           <Route element={<App />}>
             <Route index element={<Home />} />
+            <Route path="learn" element={<Learn />} />
             <Route path="login" element={<Login />} />
 
             {/* Unguarded, and in the public layout on purpose. Vercel

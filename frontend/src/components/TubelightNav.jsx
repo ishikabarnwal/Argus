@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useSectionHref } from '../lib/sectionHref'
 import './TubelightNav.css'
@@ -20,14 +20,20 @@ import './TubelightNav.css'
  *      slides to whatever you are pointing at and returns to the real active
  *      section when you leave. Focus does the same, so a keyboard tab gets
  *      the identical feedback.
+ *
+ * An item is either a homepage section (`id`, scrolled to) or a route
+ * (`path`, navigated to). They light by different means — a section by
+ * scroll position, a route by the address — but only ever one at a time,
+ * because a route item is on a page that has no sections to observe.
  */
 
 const ITEMS = [
   { id: 'why', label: 'Why Argus' },
   { id: 'evidence', label: 'Evidence' },
+  { id: 'learn', label: 'How fraud works', path: '/learn' },
 ]
 
-const SECTION_IDS = ITEMS.map((item) => item.id)
+const SECTION_IDS = ITEMS.filter((item) => !item.path).map((item) => item.id)
 
 // Enough travel to read as a light sliding along a rail, damped enough not to
 // wobble when you sweep across the items quickly.
@@ -79,8 +85,13 @@ export default function TubelightNav() {
   const reducedMotion = useReducedMotion()
   const { pathname } = useLocation()
   const sectionHref = useSectionHref()
-  const active = useActiveSection(SECTION_IDS, pathname)
+  const section = useActiveSection(SECTION_IDS, pathname)
   const [pointed, setPointed] = useState(null)
+
+  // A route item on its own page outranks the scroll position, which on that
+  // page has no sections to report anyway.
+  const route = ITEMS.find((item) => item.path === pathname)
+  const active = route ? route.id : section
 
   // Hover and focus only borrow the lamp; `active` remains the truth, and is
   // what gets announced.
@@ -92,33 +103,40 @@ export default function TubelightNav() {
       aria-label="Primary"
       onMouseLeave={() => setPointed(null)}
     >
-      {ITEMS.map((item) => (
-        <a
-          key={item.id}
-          className="tubenav__item"
-          href={sectionHref(item.id)}
-          aria-current={active === item.id ? 'location' : undefined}
-          onMouseEnter={() => setPointed(item.id)}
-          onFocus={() => setPointed(item.id)}
-          onBlur={() => setPointed(null)}
-        >
-          {lit === item.id && (
-            <motion.span
-              className="tubenav__lamp"
-              layoutId="tubenav-lamp"
-              initial={false}
-              transition={reducedMotion ? { duration: 0 } : LAMP_SPRING}
-            >
-              {/* `layout` on the bar is not decoration. The lamp animates
-                  between pills of different widths, which framer does with a
-                  scale transform — without its own layout correction the bar
-                  and its glow get stretched flat mid-flight. */}
-              <motion.span className="tubenav__beam" layout />
-            </motion.span>
-          )}
-          <span className="tubenav__label">{item.label}</span>
-        </a>
-      ))}
+      {ITEMS.map((item) => {
+        // A route is a client-side navigation; a section is an anchor, and
+        // has to stay one — see useSectionHref for why.
+        const Tag = item.path ? Link : 'a'
+        const target = item.path ? { to: item.path } : { href: sectionHref(item.id) }
+
+        return (
+          <Tag
+            key={item.id}
+            className="tubenav__item"
+            {...target}
+            aria-current={active === item.id ? (item.path ? 'page' : 'location') : undefined}
+            onMouseEnter={() => setPointed(item.id)}
+            onFocus={() => setPointed(item.id)}
+            onBlur={() => setPointed(null)}
+          >
+            {lit === item.id && (
+              <motion.span
+                className="tubenav__lamp"
+                layoutId="tubenav-lamp"
+                initial={false}
+                transition={reducedMotion ? { duration: 0 } : LAMP_SPRING}
+              >
+                {/* `layout` on the bar is not decoration. The lamp animates
+                    between pills of different widths, which framer does with a
+                    scale transform — without its own layout correction the bar
+                    and its glow get stretched flat mid-flight. */}
+                <motion.span className="tubenav__beam" layout />
+              </motion.span>
+            )}
+            <span className="tubenav__label">{item.label}</span>
+          </Tag>
+        )
+      })}
     </nav>
   )
 }

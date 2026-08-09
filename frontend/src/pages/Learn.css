@@ -1,0 +1,131 @@
+/* Learn — the public explainer at /learn.
+ *
+ * Almost all of it is .section / .card / .btn from the shared layer. What is
+ * here is the three things that layer does not have: a first section that
+ * clears the fixed topbar without a hero to do it, a reading measure narrower
+ * than the marketing column, and a numbered checklist.
+ */
+
+/* The marketing sections are 72rem wide because they hold three cards side by
+ * side. This page is mostly prose, and prose at that width is unreadable —
+ * a line should land somewhere near 75 characters, not 130. */
+.learn .section__inner {
+  max-width: 60rem;
+}
+
+/* No hero here, so the first section pads past the floating capsule itself —
+ * the same sum .page uses. */
+.learn__intro {
+  padding-top: calc(var(--topbar-h) + var(--topbar-gap) + clamp(2rem, 6vh, 3.5rem));
+  padding-bottom: 0;
+}
+
+.learn__intro .section__head {
+  margin-bottom: 0;
+}
+
+/* Four cards, and the shared 17rem minimum would fit all four across on a wide
+ * screen — columns too narrow for a paragraph this long. A 22rem floor holds
+ * it to two by two. */
+.learn__patterns {
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+}
+
+/* What the pattern above looks like to the product, kept visibly apart from
+ * the explanation so the page never reads as a sales pitch wearing advice. */
+.learn__signal {
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+  text-wrap: pretty;
+}
+
+/* Blue, the informational colour — gold is the page's calls to action and
+ * this is not one. */
+.learn__signal-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--secondary);
+}
+
+/* ---- the checklist ------------------------------------------------- */
+
+.learn__steps {
+  display: grid;
+  gap: clamp(1.25rem, 3.5vh, 2rem);
+  max-width: 46rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  counter-reset: learn-step;
+}
+
+.learn__step {
+  position: relative;
+  padding-left: 3.4rem;
+}
+
+/* The number is drawn by a counter rather than written into the markup: the
+ * <ol> already announces the position, and a second copy in a <span> would be
+ * read out twice. */
+.learn__step::before {
+  counter-increment: learn-step;
+  content: counter(learn-step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 50%;
+  color: var(--secondary);
+  background: color-mix(in srgb, var(--secondary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--secondary) 30%, transparent);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.learn__step-lead {
+  font-size: var(--text-body);
+  font-weight: 650;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  text-wrap: pretty;
+}
+
+.learn__step-body {
+  margin-top: 0.4rem;
+  font-size: var(--text-small);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+/* ---- closing ------------------------------------------------------- */
+
+.learn__cta-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.learn__note {
+  max-width: 34rem;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+@media (max-width: 480px) {
+  .learn__step {
+    padding-left: 2.9rem;
+  }
+
+  .learn__step::before {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+}

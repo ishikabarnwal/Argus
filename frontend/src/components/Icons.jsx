@@ -118,6 +118,49 @@ export function IconStatement() {
   )
 }
 
+/** Clock — a manufactured deadline. */
+export function IconClock() {
+  return (
+    <svg {...base}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 1.8" />
+    </svg>
+  )
+}
+
+/** A medal — authority that is claimed rather than held. */
+export function IconSeal() {
+  return (
+    <svg {...base}>
+      <circle cx="12" cy="9.5" r="5.5" />
+      <path d="m8.4 14.1-1.4 6.4 5-2.4 5 2.4-1.4-6.4" />
+    </svg>
+  )
+}
+
+/** A key — an OTP authorises a payment, it does not introduce anyone. */
+export function IconKey() {
+  return (
+    <svg {...base}>
+      <circle cx="8" cy="15" r="3.5" />
+      <path d="m10.6 12.6 7.4-7.4" />
+      <path d="m15.4 7.8 2 2" />
+      <path d="m18 5.2 2 2" />
+    </svg>
+  )
+}
+
+/** A stack of coins — the small fee that has to be paid first. */
+export function IconCoins() {
+  return (
+    <svg {...base}>
+      <ellipse cx="12" cy="6.5" rx="6.5" ry="2.75" />
+      <path d="M5.5 6.5v5c0 1.5 2.9 2.75 6.5 2.75s6.5-1.25 6.5-2.75v-5" />
+      <path d="M5.5 11.5v5c0 1.5 2.9 2.75 6.5 2.75s6.5-1.25 6.5-2.75v-5" />
+    </svg>
+  )
+}
+
 /** Plain cross — starting something, in the sidebar's icon-only rail. */
 export function IconPlus() {
   return (

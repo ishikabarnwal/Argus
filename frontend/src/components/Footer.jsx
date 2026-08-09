@@ -17,6 +17,7 @@ export default function Footer() {
         <nav className="footer__nav" aria-label="Footer">
           <a href={sectionHref('why')}>Why Argus</a>
           <a href={sectionHref('evidence')}>Evidence</a>
+          <Link to="/learn">How fraud works</Link>
           <Link to="/start">Start a case</Link>
         </nav>
       </div>

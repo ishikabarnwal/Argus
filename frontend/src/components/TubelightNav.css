@@ -72,3 +72,13 @@
 .tubenav__label {
   position: relative;
 }
+
+/* Three items rather than two is enough to push the capsule's three tracks
+ * into each other on a narrow tablet, before the breakpoint that hides the
+ * nav altogether. The pills give up their side padding first — the labels
+ * stay whole, which is the part that has to survive. */
+@media (max-width: 900px) {
+  .tubenav__item {
+    padding-inline: 0.7rem;
+  }
+}
