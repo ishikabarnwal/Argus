@@ -172,3 +172,18 @@
     display: none;
   }
 }
+
+/* Even with the nav gone, four things do not fit. At 360px the capsule is
+ * 328px wide and the brand, the theme toggle, "Sign in" and "Start a case"
+ * want about 324px between them before padding — so the row overflowed its
+ * own rounded ends.
+ *
+ * The quiet one goes. "Start a case" is the reason a first-time visitor is
+ * here; signing in is reachable from /start, from the footer, and from any
+ * guarded route, and someone with an account is far likelier to arrive by a
+ * saved link than by tapping a bar. */
+@media (max-width: 480px) {
+  .topbar__cta--quiet {
+    display: none;
+  }
+}

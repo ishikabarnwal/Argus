@@ -57,7 +57,11 @@ function App() {
             </Link>
           ) : (
             <>
-              <Link className="btn btn--outline btn--sm topbar__cta" to="/login">
+              {/* Dropped below 480px, where four controls no longer fit the
+                  capsule — see App.css. Signing in is still one tap away from
+                  /start and from the footer, and it is the less urgent of the
+                  two for someone who has just arrived. */}
+              <Link className="btn btn--outline btn--sm topbar__cta topbar__cta--quiet" to="/login">
                 Sign in
               </Link>
               <Link className="btn btn--primary btn--sm topbar__cta" to="/start">

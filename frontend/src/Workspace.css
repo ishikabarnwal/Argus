@@ -49,5 +49,10 @@
 @media (max-width: 560px) {
   .workspace__main .page {
     padding-inline: 0.9rem;
+    /* The theme toggle is fixed to the top-right corner, and at this width
+     * the content column runs the full way under it — a page heading long
+     * enough to reach the right edge collided with it. On a wide screen
+     * nothing gets near that corner, so the clearance is only bought here. */
+    padding-block-start: calc(var(--topbar-gap) + 2.25rem + 0.85rem);
   }
 }
