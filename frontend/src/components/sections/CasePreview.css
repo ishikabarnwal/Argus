@@ -4,23 +4,53 @@
   padding-block: var(--section-pad);
   padding-inline: clamp(1.25rem, 4vw, 2.5rem);
   border-top: 1px solid var(--border-subtle);
+  /* Own stacking context, so the orbs can sit at z-index -1 without escaping
+   * behind the page itself. */
+  isolation: isolate;
+
+  /* The receipt fragment is clipped to a torn edge, and clip-path takes the
+   * box-shadow with it — depth there has to come from a drop-shadow filter,
+   * which has no token because nothing else needs one. These match the rgba
+   * values --shadow-md already uses in each theme. */
+  --frag-shadow: rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme='light'] .preview {
+  --frag-shadow: rgba(27, 35, 64, 0.16);
+}
+
+/* Two orbs, matching the glass band above: blue under the scattered side,
+ * gold under the ordered one. The section reads left to right and so does the
+ * light. */
+.preview::before,
+.preview::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  aspect-ratio: 1;
+  pointer-events: none;
 }
 
 .preview::before {
-  content: '';
-  position: absolute;
   bottom: -40%;
   left: -8%;
   width: min(52rem, 88%);
-  aspect-ratio: 1;
   background: radial-gradient(circle at center, var(--glow-secondary), transparent 66%);
-  pointer-events: none;
+}
+
+.preview::after {
+  top: -26%;
+  right: -6%;
+  width: min(38rem, 70%);
+  background: radial-gradient(circle at center, var(--glow-accent), transparent 66%);
 }
 
 .preview__inner {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  /* The art side holds two panels and an arrow between them now, not one
+   * window, so it takes a larger share than it used to. */
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
   align-items: center;
   gap: clamp(2rem, 5vw, 4rem);
 }
@@ -89,252 +119,254 @@
   text-wrap: pretty;
 }
 
-/* ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * Before and after                                                    *
+ * ------------------------------------------------------------------ */
 
 .preview__art {
   min-width: 0;
 }
 
-/* The window.
- *
- * overflow: hidden is doing two jobs: it rounds the sidebar and the chrome
- * bar to the window's own corners, and it means nothing inside can escape
- * the frame the way the old SVG's text did. */
-.casemock {
-  position: relative;
-  width: 100%;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-}
-
-/* The same lit top edge the cards carry, so the window belongs to the same
- * light source as everything around it. */
-.casemock::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  z-index: 1;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.5;
-}
-
-/* ---- browser chrome ---------------------------------------------- */
-
-/* --bg-inset rather than --bg-raised: in light mode `raised` and `surface`
- * are both #FFFFFF, so the chrome bar would vanish into the page it frames.
- * `inset` is a step down from the surface in both themes. */
-.casemock__chrome {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.55rem 0.75rem;
-  background: var(--bg-inset);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.casemock__lights {
-  display: flex;
-  gap: 0.36rem;
-  flex-shrink: 0;
-}
-
-.casemock__lights i {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--border-strong);
-}
-
-.casemock__url {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-width: 0;
-  max-width: 20rem;
-  padding: 0.24rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-  color: var(--text-tertiary);
-}
-
-.casemock__url-text {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  /* A URL is one unbreakable token, so this is the one string here that
-   * truncates rather than wraps — which is what a real address bar does. */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ---- app ---------------------------------------------------------- */
-
-.casemock__app {
+.ba {
   display: grid;
-  grid-template-columns: 8rem minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.5rem, 1.5vw, 1rem);
 }
 
-.casemock__rail {
+.ba__side {
+  min-width: 0;
+}
+
+.ba__caption {
+  margin-top: 0.9rem;
+  text-align: center;
+}
+
+/* Gold on the far side, blue-ish grey on the near one — the caption pair
+ * carries the same direction the arrow between them does. */
+.ba__caption--after {
+  color: var(--accent);
+}
+
+.ba__arrow {
+  display: grid;
+  place-items: center;
+  /* Sits level with the panels, not with the captions below them. */
+  margin-bottom: 1.9rem;
+}
+
+.ba__arrow svg {
+  width: clamp(2rem, 4vw, 3.4rem);
+  height: auto;
+}
+
+/* ---- the scattered side -------------------------------------------- */
+
+/* Fixed ratio so the three absolutely-positioned fragments have a box to be
+ * positioned against, and so the pile keeps its composition at every width. */
+.scatter {
+  position: relative;
+  aspect-ratio: 1 / 0.78;
+}
+
+.frag {
+  position: absolute;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  padding: 0.9rem 0.75rem;
-  background: var(--bg-inset);
-  border-right: 1px solid var(--border-subtle);
+  gap: 0.4rem;
+  padding: 0.6rem 0.65rem;
+  border-radius: var(--radius-md);
 }
 
-.casemock__rail-active {
-  height: 1.4rem;
+.frag__icon {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--accent-fill) 16%, transparent);
-  position: relative;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent-fill) 14%, transparent);
 }
 
-.casemock__rail-active::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0.5rem;
-  width: 55%;
-  height: 5px;
-  margin-top: -2.5px;
-  border-radius: 3px;
-  background: var(--accent-fill);
+.frag__icon svg {
+  width: 13px;
+  height: 13px;
 }
 
-.casemock__rail-row {
-  height: 5px;
-  border-radius: 3px;
+/* Skeleton bars rather than legible text. These fragments stand for evidence
+ * in general; writing readable messages into them would mean inventing
+ * evidence to illustrate a page about evidence. */
+.frag__bar {
+  height: 4px;
+  border-radius: 2px;
   background: var(--text-tertiary);
   opacity: 0.32;
 }
 
-.casemock__pane {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(0.9rem, 2vw, 1.3rem);
-  padding: clamp(0.9rem, 2.2vw, 1.4rem);
-  min-width: 0;
+/* The tilted screenshot. */
+.frag--shot {
+  z-index: 1;
+  top: 2%;
+  left: 0;
+  width: 54%;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+  transform: rotate(-9deg);
 }
 
-.casemock__head {
+/* The chat bubble. Tinted and opaque rather than glass, because the tail is
+ * an inherited-background square and there is no way to carry a backdrop
+ * blur into it — a glass bubble would have a flat tail. */
+.frag--chat {
+  z-index: 3;
+  top: 30%;
+  right: 0;
+  width: 58%;
+  background: color-mix(in srgb, var(--secondary-fill) 14%, var(--bg-surface));
+  border: 1px solid color-mix(in srgb, var(--secondary-fill) 32%, transparent);
+  box-shadow: var(--shadow-md);
+  transform: rotate(6deg);
+}
+
+.frag--chat .frag__icon {
+  color: var(--secondary);
+  background: color-mix(in srgb, var(--secondary-fill) 18%, transparent);
+}
+
+.frag--chat::after {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border-right: 1px solid color-mix(in srgb, var(--secondary-fill) 32%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--secondary-fill) 32%, transparent);
+  border-bottom-right-radius: 2px;
+  transform: rotate(45deg);
+}
+
+/* The statement slip. Opaque paper, and the only fragment with a torn edge. */
+.frag--receipt {
+  z-index: 2;
+  bottom: 0;
+  left: 14%;
+  width: 44%;
+  gap: 0.45rem;
+  padding-bottom: 1.15rem;
+  background: var(--bg-raised);
+  /* Torn bottom edge. clip-path takes the border and box-shadow with it, so
+   * depth comes from a drop-shadow filter — that one follows the clipped
+   * outline rather than the element's box. */
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 92%,
+    87.5% 100%,
+    75% 92%,
+    62.5% 100%,
+    50% 92%,
+    37.5% 100%,
+    25% 92%,
+    12.5% 100%,
+    0 92%
+  );
+  filter: drop-shadow(0 5px 12px var(--frag-shadow));
+  transform: rotate(-4deg);
+}
+
+.frag__rule {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--text-tertiary);
+  opacity: 0.25;
+}
+
+.frag__rule--short {
+  width: 62%;
+}
+
+.frag__amount {
+  align-self: flex-end;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+/* ---- the ordered side ----------------------------------------------- */
+
+.tidy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: clamp(0.9rem, 2vw, 1.15rem);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-lip);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .frag--shot,
+  .tidy {
+    background: var(--bg-surface);
+  }
+}
+
+.tidy__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
-.casemock__case {
+.tidy__case {
   font-family: var(--font-mono);
-  font-size: clamp(0.85rem, 1.3vw, 1rem);
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
 }
 
-/* The score badge is .risk-badge, in styles/components.css — shared with the
- * real case dashboard so the mock and the product cannot drift apart. */
-
-/* Type comes from .label-caps — this is the case-file field label the type
- * scale already defines. Only the spacing is local. */
-.casemock__label {
-  margin-bottom: 0.6rem;
+/* Type comes from .label-caps; only the spacing is local. */
+.tidy__label {
+  margin-bottom: 0.5rem;
 }
 
-/* ---- timeline ----------------------------------------------------- */
-
-.casemock__timeline {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+.tidy__chips {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
 }
 
-/* The rail runs between the first and last node rather than edge to edge.
- * Each node is centred in a fifth of the width, so their centres sit at 10%
- * and 90% — hence the inset. */
-.casemock__timeline::before {
-  content: '';
-  position: absolute;
-  top: 4px;
-  left: 10%;
-  right: 10%;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--border-default);
-}
-
-.casemock__event {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-  min-width: 0;
-}
-
-/* Nodes are all one size so they stay centred on the rail; the flagged one
- * earns its emphasis from colour and a halo instead of from diameter. */
-.casemock__node {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--secondary-fill);
-  /* Punches a hole in the rail behind it. */
-  box-shadow: 0 0 0 3px var(--bg-surface);
-}
-
-.casemock__event--flagged .casemock__node {
-  background: var(--accent-fill);
-  box-shadow: 0 0 0 3px var(--bg-surface), 0 0 0 6px var(--glow-accent);
-}
-
-.casemock__date {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-}
-
-.casemock__event--flagged .casemock__date {
-  color: var(--accent);
-  font-weight: 600;
-}
-
-/* ---- extracted entities ------------------------------------------- */
-
-.casemock__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-
-.casemock__chip {
-  padding: 0.32rem 0.65rem;
+.tidy__chip {
+  padding: 0.28rem 0.6rem;
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
   color: var(--secondary);
   background: color-mix(in srgb, var(--secondary) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--secondary) 32%, transparent);
 }
 
-/* ---- the flagged gap ---------------------------------------------- */
-
-.casemock__gap {
+/* Missing evidence, in gap violet. */
+.tidy__gap {
   display: flex;
   align-items: flex-start;
-  gap: 0.55rem;
-  padding: 0.65rem 0.8rem;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
   border-radius: var(--radius-md);
   font-size: var(--text-caption);
   line-height: 1.45;
@@ -344,37 +376,14 @@
   border: 1px solid color-mix(in srgb, var(--gap) 45%, transparent);
 }
 
-.casemock__gap svg {
+.tidy__gap svg {
   flex-shrink: 0;
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   margin-top: 1px;
 }
 
-/* ---- next action --------------------------------------------------- */
-
-.casemock__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.casemock__btn {
-  padding: 0.45rem 0.85rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-strong);
-  font-size: var(--text-caption);
-  font-weight: 650;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.casemock__btn--primary {
-  border-color: transparent;
-  background: var(--accent-fill);
-  color: var(--accent-fill-text);
-  box-shadow: 0 0 20px var(--glow-accent);
-}
+/* ---- narrow ---------------------------------------------------------- */
 
 @media (max-width: 900px) {
   .preview__inner {
@@ -386,17 +395,27 @@
   }
 }
 
+@media (max-width: 620px) {
+  /* Stacked, so the arrow has to turn with the flow. */
+  .ba {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .ba__arrow {
+    margin-bottom: 0;
+    transform: rotate(90deg);
+  }
+
+  /* The pile needs less height than it does beside a panel, where it was
+   * matching the case card's. */
+  .scatter {
+    aspect-ratio: 1 / 0.62;
+  }
+}
+
 @media (max-width: 520px) {
   .preview__stats {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  /* Below this the sidebar is costing a third of the width to say nothing. */
-  .casemock__rail {
-    display: none;
-  }
-
-  .casemock__app {
     grid-template-columns: minmax(0, 1fr);
   }
 }
