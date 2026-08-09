@@ -31,6 +31,16 @@
   grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
 }
 
+/* The shared .card__icon is a quiet inset well — right for a reference entry,
+ * too quiet here, where the icon is the only thing distinguishing four
+ * otherwise identical blocks of prose at a glance. Same size, tinted with the
+ * accent fill so it actually registers. */
+.learn__pattern-icon {
+  background: color-mix(in srgb, var(--accent-fill) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent-fill) 32%, transparent);
+  box-shadow: none;
+}
+
 /* What the pattern above looks like to the product, kept visibly apart from
  * the explanation so the page never reads as a sales pitch wearing advice. */
 .learn__signal {
@@ -48,11 +58,15 @@
   color: var(--secondary);
 }
 
-/* ---- the checklist ------------------------------------------------- */
+/* ---- the step-flow --------------------------------------------------- *
+ *
+ * The homepage pipeline's shape without its machinery: numbered nodes on a
+ * connecting line, drawn entirely in CSS, no motion and nothing to click.
+ * Someone reading this may be following it with a phone in their other hand,
+ * and a diagram that wants interacting with is the wrong thing to hand them.
+ * ---------------------------------------------------------------------- */
 
-.learn__steps {
-  display: grid;
-  gap: clamp(1.05rem, 2.8vh, 1.6rem);
+.learn__flow {
   max-width: 46rem;
   padding: 0;
   margin: 0;
@@ -60,31 +74,66 @@
   counter-reset: learn-step;
 }
 
-.learn__step {
+.learn__flow-step {
   position: relative;
   padding-left: 3.4rem;
+  /* The gap between steps belongs to the step, not to the grid, because the
+   * connector has to run through it — a grid gap is empty space no
+   * pseudo-element can reach into. */
+  padding-bottom: clamp(1.4rem, 3.2vh, 2rem);
+}
+
+.learn__flow-step:last-child {
+  padding-bottom: 0;
 }
 
 /* The number is drawn by a counter rather than written into the markup: the
  * <ol> already announces the position, and a second copy in a <span> would be
- * read out twice. */
-.learn__step::before {
+ * read out twice.
+ *
+ * Opaque background, and above the connector in the stacking order, so the
+ * line runs behind the node instead of through the digit. */
+.learn__flow-step::before {
   counter-increment: learn-step;
   content: counter(learn-step);
   position: absolute;
   left: 0;
   top: 0;
+  z-index: 1;
   display: grid;
   place-items: center;
   width: 2.15rem;
   height: 2.15rem;
   border-radius: 50%;
+  background: var(--bg-surface);
+  border: 1px solid color-mix(in srgb, var(--secondary) 38%, var(--border-default));
   color: var(--secondary);
-  background: color-mix(in srgb, var(--secondary) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--secondary) 30%, transparent);
+  font-family: var(--font-mono);
   font-size: var(--text-caption);
-  font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+/* The connector, running from the bottom of this node to the top of the next.
+ * It fades downward so each segment reads as leading somewhere rather than as
+ * a continuous rule with circles parked on it. */
+.learn__flow-step::after {
+  content: '';
+  position: absolute;
+  left: 1.075rem;
+  top: 2.15rem;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-1px);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--secondary) 45%, transparent),
+    color-mix(in srgb, var(--secondary) 10%, transparent)
+  );
+}
+
+/* Nothing to connect to. */
+.learn__flow-step:last-child::after {
+  display: none;
 }
 
 .learn__step-lead {
@@ -120,12 +169,17 @@
 }
 
 @media (max-width: 480px) {
-  .learn__step {
+  .learn__flow-step {
     padding-left: 2.9rem;
   }
 
-  .learn__step::before {
+  .learn__flow-step::before {
     width: 1.9rem;
     height: 1.9rem;
+  }
+
+  .learn__flow-step::after {
+    left: 0.95rem;
+    top: 1.9rem;
   }
 }

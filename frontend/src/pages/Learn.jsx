@@ -118,7 +118,7 @@ export default function Learn() {
           <div className="card-grid learn__patterns">
             {PATTERNS.map((pattern, i) => (
               <Reveal key={pattern.id} delay={i * 0.08} className="card">
-                <span className="card__icon">{pattern.icon}</span>
+                <span className="card__icon learn__pattern-icon">{pattern.icon}</span>
                 <h3 className="card__title">{pattern.title}</h3>
                 <p className="card__body">{pattern.body}</p>
                 <div className="card__foot">
@@ -147,11 +147,16 @@ export default function Learn() {
           </Reveal>
 
           <Reveal>
-            {/* list-style: none strips list semantics in some screen readers,
+            {/* A step-flow rather than a list of paragraphs: numbered nodes on
+                a connecting line, so the order is drawn instead of merely
+                implied. Static, unlike the homepage pipeline — this is
+                something to follow, not something to play with.
+
+                list-style: none strips list semantics in some screen readers,
                 so the role is restated rather than assumed. */}
-            <ol className="learn__steps" role="list">
+            <ol className="learn__flow" role="list">
               {STEPS.map((step) => (
-                <li key={step.id} className="learn__step">
+                <li key={step.id} className="learn__flow-step">
                   <p className="learn__step-lead">{step.lead}</p>
                   <p className="learn__step-body">{step.body}</p>
                 </li>
