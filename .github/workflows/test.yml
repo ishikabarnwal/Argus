@@ -40,3 +40,36 @@ jobs:
       # The suites cover the scoring and gap rules — pure functions over plain
       # objects, so no database, no keys, no services need to be up.
       - run: npm test
+
+  # Its own job rather than more steps on the one above: the two share no
+  # files and no lockfile, so running them side by side is both faster and
+  # clearer about which half broke.
+  frontend:
+    name: Frontend lint and build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Vite, oxlint and the React plugin all want ^20.19.0 || >=22.12.0, so
+      # this has to resolve to a recent 20.x — which `20` does, since
+      # setup-node installs the newest patch for a major.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      # The point of the job. Vercel builds on push too, but a failure there
+      # is found after the fact and in someone else's logs; this fails on the
+      # commit that caused it. No env needed — VITE_API_URL is optional and
+      # defaults to the relative /api.
+      - run: npm run build

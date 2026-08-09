@@ -85,7 +85,7 @@ flowchart LR
 
 The links above are for using Argus. This is for running or changing it.
 
-Needs Node 20+, Python 3.11+, Tesseract on your `PATH`, a MongoDB connection string and a
+Needs Node 20.19+, Python 3.11+, Tesseract on your `PATH`, a MongoDB connection string and a
 [Gemini API key](https://aistudio.google.com/apikey).
 
 ```ini
