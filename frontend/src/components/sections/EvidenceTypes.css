@@ -1,0 +1,168 @@
+/* The glass band below the hero.
+ *
+ * Everything here is gold and blue from the locked palette — the orbs are the
+ * existing fill tokens at low mix, not new colours.
+ */
+
+.glassband {
+  position: relative;
+  /* The orbs are absolutely positioned and blurred well past their own box,
+   * so the section has to contain them or they bleed into the hero above. */
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* ---- the orbs ------------------------------------------------------- */
+
+.glassband__orbs {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.glassband__orb {
+  position: absolute;
+  border-radius: 50%;
+  /* A big blur radius is what turns a hard-edged radial gradient into light
+   * rather than a coloured circle. */
+  filter: blur(70px);
+}
+
+.glassband__orb--gold {
+  width: min(30rem, 70vw);
+  height: min(30rem, 70vw);
+  top: 6%;
+  left: 4%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent-fill) 26%, transparent),
+    transparent 70%
+  );
+}
+
+.glassband__orb--blue {
+  width: min(26rem, 62vw);
+  height: min(26rem, 62vw);
+  right: 3%;
+  bottom: 2%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--secondary-fill) 24%, transparent),
+    transparent 70%
+  );
+}
+
+/* Glow is a dark-room effect — tokens.css says so about --glow-*, and the
+ * same holds here. On paper these go from light to stain unless dialled back. */
+:root[data-theme='light'] .glassband__orb {
+  opacity: 0.5;
+  filter: blur(80px);
+}
+
+/* ---- the panels ------------------------------------------------------ */
+
+.glassband__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(0.9rem, 2vw, 1.35rem);
+  align-items: start;
+}
+
+/* The static part of the stagger. It lives on the slot rather than the panel
+ * because the panel's transform belongs to the float animation, and a margin
+ * cannot be clobbered by it. */
+.gcard-slot:nth-child(1) {
+  margin-top: 1.15rem;
+}
+
+.gcard-slot:nth-child(3) {
+  margin-top: 2.1rem;
+}
+
+.gcard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  height: 100%;
+  padding: clamp(1.25rem, 2.4vw, 1.6rem);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  /* 18px rather than the topbar's 22px. This blurs a moving backdrop, which
+   * is re-rendered every frame the orbs drift, and the cost scales with the
+   * radius. At this size the picture is the same. */
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-lip);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Without backdrop-filter the tint has to carry the whole job alone, the same
+ * compromise the topbar makes. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .gcard {
+    background: var(--bg-surface);
+  }
+}
+
+.gcard:hover {
+  border-color: color-mix(in srgb, var(--accent-fill) 45%, var(--glass-border));
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-lip), 0 0 40px var(--glow-accent);
+}
+
+.gcard__icon {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: var(--radius-md);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent-fill) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-fill) 30%, transparent);
+}
+
+.gcard__title {
+  font-family: var(--font-body);
+  font-size: var(--text-lead);
+  font-weight: 650;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+}
+
+.gcard__body {
+  flex: 1;
+  font-size: var(--text-small);
+  line-height: var(--leading-normal);
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+
+.gcard__tag {
+  align-self: flex-start;
+  padding: 0.22rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-inset) 70%, transparent);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- narrow ---------------------------------------------------------- */
+
+@media (max-width: 860px) {
+  .glassband__cards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* The offsets are a wide-screen composition. Stacked, they are just uneven
+   * gaps between three panels in a column. */
+  .gcard-slot:nth-child(1),
+  .gcard-slot:nth-child(3) {
+    margin-top: 0;
+  }
+}

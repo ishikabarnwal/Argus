@@ -8,19 +8,29 @@ import CtaBand from '../components/sections/CtaBand'
 /** The marketing page. Previously the whole of App.jsx, before there were
  *  routes for it to share the layout with.
  *
- *  Pipeline sits third deliberately. Without it the page is three card grids
- *  in a row — differentiators, then the preview's stat list, then evidence
- *  types — and the eye stops reading them separately. It also answers the
- *  question the differentiators raise ("how?") at the point it gets asked,
- *  before the preview shows what comes out the other end. */
+ *  Order is the argument the page makes, in four moves:
+ *
+ *    EvidenceTypes   what do I even give it?      (glass, straight after the hero)
+ *    Differentiators why this and not a folder?
+ *    Pipeline        how does it work?
+ *    CasePreview     what does it look like?
+ *
+ *  EvidenceTypes used to sit fourth, after the preview. A visitor cannot
+ *  judge any of the middle three without first knowing what goes in, and the
+ *  answer — three file types — is both the easiest thing on the page to grasp
+ *  and the one that decides whether they have anything to upload at all.
+ *
+ *  Pipeline sits between the claim and the picture for the same reason: it
+ *  answers the question the differentiators raise at the point it gets asked,
+ *  and it breaks up what was otherwise card grid after card grid. */
 export default function Home() {
   return (
     <>
       <Hero />
+      <EvidenceTypes />
       <Differentiators />
       <Pipeline />
       <CasePreview />
-      <EvidenceTypes />
       <CtaBand />
     </>
   )
