@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { IconChat, IconImage, IconStatement } from '../components/Icons'
 import { uploadEvidence } from '../lib/api'
@@ -38,6 +38,16 @@ const TYPES = [
   },
 ]
 
+/**
+ * How long an upload has to be running before we explain the wait.
+ *
+ * A warm upload finishes in a couple of seconds, so anything past this is the
+ * ai-service waking — the backend will keep trying for half a minute rather
+ * than fail (see callAiService in backend/routes/evidence.js). Saying nothing
+ * for that long makes a working upload look like a frozen one.
+ */
+const EXPLAIN_WAIT_AFTER_MS = 5000
+
 export default function StartCase() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -52,7 +62,19 @@ export default function StartCase() {
   const [text, setText] = useState('')
   const [dragging, setDragging] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [waitingLong, setWaitingLong] = useState(false)
   const [error, setError] = useState(null)
+
+  // Only starts counting once an upload is actually in flight, and resets
+  // when it ends — so a second upload does not inherit the first one's note.
+  useEffect(() => {
+    if (!submitting) {
+      setWaitingLong(false)
+      return undefined
+    }
+    const timer = setTimeout(() => setWaitingLong(true), EXPLAIN_WAIT_AFTER_MS)
+    return () => clearTimeout(timer)
+  }, [submitting])
 
   const activeType = TYPES.find((t) => t.id === type)
   const hasPayload = source === 'file' ? Boolean(file) : text.trim().length > 0
@@ -249,6 +271,18 @@ export default function StartCase() {
             <button className="btn btn--primary" type="submit" disabled={submitting}>
               {submitting ? 'Reading evidence…' : 'Upload and open case'}
             </button>
+
+            {/* role="status" rather than alert: this is reassurance about
+                something still working, not a problem. Nothing is wrong, so
+                it is announced politely and does not interrupt. */}
+            {submitting && waitingLong && (
+              <p className="start__waking text-caption" role="status">
+                <span className="start__pulse" aria-hidden="true" />
+                Still working — the AI service sleeps on free hosting and takes about half a
+                minute to wake. Nothing has gone wrong.
+              </p>
+            )}
+
             <p className="start__note text-caption">
               Prototype build — synthetic sample data only, never a real victim&apos;s evidence.
             </p>

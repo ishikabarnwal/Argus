@@ -75,6 +75,67 @@ const UPSTREAM_DOWN = [502, 503, 504];
 const MAX_DETAIL = 400;
 
 /**
+ * How long to keep trying a sleeping ai-service, and how long to pause
+ * between attempts.
+ *
+ * A measured cold start is a little over twenty seconds, so the budget has to
+ * clear that with room to spare. It bounds when a *new* attempt may start,
+ * not the whole call: an attempt already in flight is allowed to finish,
+ * because a request the platform is holding while the service boots is the
+ * one most likely to succeed.
+ */
+const WAKE_BUDGET_MS = 30_000;
+const WAKE_RETRY_DELAY_MS = 3_000;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * POST to the ai-service, waiting out a cold start.
+ *
+ * Free hosting sleeps the service, so the first upload after a quiet spell
+ * would otherwise fail on a platform error page while the thing behind it was
+ * still booting. Retrying turns that into a slow upload instead of a failed
+ * one, which is the difference between "this is broken" and "this is waking".
+ *
+ * **Only 502/503/504 and outright connection failures are retried**, and that
+ * restraint is the point: those all mean the request never reached the
+ * application. Anything the service answered itself — a 429 for spent Gemini
+ * quota above all — is returned untouched, because retrying it would spend
+ * more of the quota that just ran out and make the problem worse.
+ *
+ * The body is rebuilt per attempt rather than reused: a FormData sent once is
+ * consumed, and a retry with a drained stream would upload nothing at all.
+ *
+ * @param {() => FormData} buildBody called fresh for each attempt
+ * @returns {Promise<Response | null>} null when it never answered
+ */
+async function callAiService(path, buildBody) {
+  const url = `${AI_SERVICE_URL}${path}`;
+  const startNewAttemptsUntil = Date.now() + WAKE_BUDGET_MS;
+  let attempts = 0;
+
+  for (;;) {
+    attempts += 1;
+    let response = null;
+
+    try {
+      response = await fetch(url, { method: 'POST', body: buildBody() });
+      if (response.ok || !UPSTREAM_DOWN.includes(response.status)) return response;
+    } catch {
+      // Nothing listening yet — the same condition as a 502, one layer down.
+      response = null;
+    }
+
+    if (Date.now() + WAKE_RETRY_DELAY_MS >= startNewAttemptsUntil) {
+      console.warn(`ai-service ${path} unreachable after ${attempts} attempts`);
+      return response;
+    }
+
+    await sleep(WAKE_RETRY_DELAY_MS);
+  }
+}
+
+/**
  * Explain a failed ai-service call.
  *
  * The service sleeps on free hosting and takes about half a minute to wake.
@@ -89,16 +150,18 @@ const MAX_DETAIL = 400;
  * a condition that clears itself should say so rather than read as a crash.
  */
 async function upstreamFailure(res, response, endpoint) {
-  const body = await response.text();
-
-  if (UPSTREAM_DOWN.includes(response.status)) {
+  // Null means it never answered at all; a down status means it answered with
+  // the platform's page rather than the service's. Both mean the same thing to
+  // whoever is waiting, and by now they have already been waited out.
+  if (!response || UPSTREAM_DOWN.includes(response.status)) {
     return res.status(503).json({
       error:
-        'The AI service is not responding. On free hosting it sleeps after a spell of ' +
-        'inactivity and takes about half a minute to wake — try the upload again shortly.',
+        'The AI service did not come up in time. On free hosting it sleeps after a spell ' +
+        'of inactivity — give it a minute and try the upload again.',
     });
   }
 
+  const body = await response.text();
   const isMarkup = body.trimStart().startsWith('<');
 
   return res.status(502).json({
@@ -138,14 +201,13 @@ router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), 
     // this branch is what makes a WhatsApp export uploadable at all.
     rawText = req.file.buffer.toString('utf8');
   } else if (req.file) {
-    const ocrForm = new FormData();
-    ocrForm.append('file', new Blob([req.file.buffer]), req.file.originalname);
-
-    const ocrResponse = await fetch(`${AI_SERVICE_URL}/ocr`, {
-      method: 'POST',
-      body: ocrForm,
+    const ocrResponse = await callAiService('/ocr', () => {
+      const form = new FormData();
+      form.append('file', new Blob([req.file.buffer]), req.file.originalname);
+      return form;
     });
-    if (!ocrResponse.ok) {
+
+    if (!ocrResponse?.ok) {
       return upstreamFailure(res, ocrResponse, '/ocr');
     }
     ({ text: rawText } = await ocrResponse.json());
@@ -159,14 +221,13 @@ router.post('/upload', requireAuth, requireRole('user'), upload.single('file'), 
     return res.status(400).json({ error: 'No readable text in that upload' });
   }
 
-  const extractForm = new FormData();
-  extractForm.append('text', rawText);
-
-  const extractResponse = await fetch(`${AI_SERVICE_URL}/extract`, {
-    method: 'POST',
-    body: extractForm,
+  const extractResponse = await callAiService('/extract', () => {
+    const form = new FormData();
+    form.append('text', rawText);
+    return form;
   });
-  if (!extractResponse.ok) {
+
+  if (!extractResponse?.ok) {
     return upstreamFailure(res, extractResponse, '/extract');
   }
   const extractedEntities = await extractResponse.json();

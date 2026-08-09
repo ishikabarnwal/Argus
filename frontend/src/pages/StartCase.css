@@ -233,6 +233,43 @@
   margin-top: 0;
 }
 
+/* The upload is still running, and the wait is expected. Informational blue —
+ * caution orange would say something had gone wrong, and nothing has. Takes a
+ * line of its own so it is not squeezed beside the button. */
+.start__waking {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+  color: var(--secondary);
+  text-wrap: pretty;
+}
+
+/* Proof of life next to the words. Reduced motion is handled globally in
+ * base.css, where it settles to a static dot. */
+.start__pulse {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.38rem;
+  border-radius: 50%;
+  background: currentColor;
+  animation: start-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes start-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .start__form .btn[disabled] {
   opacity: 0.6;
   cursor: progress;
