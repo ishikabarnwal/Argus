@@ -13,22 +13,118 @@
   max-width: 60rem;
 }
 
+/* Body copy on this page runs one step below the marketing sections. Those
+ * ledes are a sentence or two under a heading; here they sit above dense
+ * explanatory prose, and at 18px the whole page read as shouted. */
+.learn .section__lede {
+  font-size: var(--text-body);
+}
+
 /* No hero here, so the first section pads past the floating capsule itself —
  * the same sum .page uses. */
 .learn__intro {
-  padding-top: calc(var(--topbar-h) + var(--topbar-gap) + clamp(2rem, 6vh, 3.5rem));
+  padding-top: calc(var(--topbar-h) + var(--topbar-gap) + clamp(2.5rem, 8vh, 4.5rem));
   padding-bottom: 0;
 }
 
-.learn__intro .section__head {
-  margin-bottom: 0;
+/* The title moment. Given more air below than the sections that follow, and
+ * held narrow so the line breaks land somewhere deliberate. */
+.learn__title {
+  max-width: 40rem;
+  margin-bottom: clamp(1rem, 3vh, 2rem);
 }
 
-/* Four cards, and the shared 17rem minimum would fit all four across on a wide
- * screen — columns too narrow for a paragraph this long. A 22rem floor holds
- * it to two by two. */
-.learn__patterns {
-  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+/* The one lede on the page that keeps the larger size — it is carrying the
+ * opening rather than introducing a section. */
+.learn__title .section__lede {
+  font-size: var(--text-lead);
+}
+
+/* ---- the four moves --------------------------------------------------- *
+ *
+ * Three across, with the first spanning all of them. The asymmetry is the
+ * section lede's claim made in layout: urgency is what makes room for the
+ * other three, not one of four equals.
+ * ---------------------------------------------------------------------- */
+
+.learn__moves {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.85rem, 2vw, 1.15rem);
+  align-items: stretch;
+}
+
+.move--lead {
+  grid-column: 1 / -1;
+}
+
+.move__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Ordinal, not decoration — it is the only thing carrying "roughly this
+ * order" now that the cards are not in a single line. */
+.move__num {
+  font-family: var(--font-mono);
+  font-size: var(--text-lead);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-tertiary);
+}
+
+.move--lead .move__num {
+  font-size: var(--text-h4);
+  color: var(--accent);
+}
+
+.move--lead .learn__pattern-icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Below this the lead card is not wide enough to be worth splitting, and it
+ * simply reads as a taller card at the top — which is still the point. */
+@media (min-width: 720px) {
+  .move--lead {
+    display: grid;
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    align-items: center;
+    column-gap: clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  /* Left: what the move is. Right: what it does and what Argus makes of it. */
+  .move--lead .move__head {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .move--lead .card__title {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .move--lead .card__body {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .move--lead .card__foot {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .learn__moves {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* The shared .card__icon is a quiet inset well — right for a reference entry,
@@ -106,7 +202,7 @@
   height: 2.15rem;
   border-radius: 50%;
   background: var(--bg-surface);
-  border: 1px solid color-mix(in srgb, var(--secondary) 38%, var(--border-default));
+  border: 1px solid var(--secondary-edge);
   color: var(--secondary);
   font-family: var(--font-mono);
   font-size: var(--text-caption);

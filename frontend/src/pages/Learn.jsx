@@ -17,6 +17,11 @@ import './Learn.css'
  *      thing it describes, and a page that shouts is a page they stop
  *      reading. No red anywhere — the palette reserves it for confirmed fraud
  *      signals, and general education is not one.
+ *
+ * The copy is deliberately short. An earlier draft gave each pattern a full
+ * paragraph, and four paragraphs in four identical boxes is a wall of text
+ * wearing a grid. One sentence per card is the budget; if a pattern cannot be
+ * said in one, it is two patterns.
  */
 
 const PATTERNS = [
@@ -24,33 +29,29 @@ const PATTERNS = [
     id: 'urgency',
     icon: <IconClock />,
     title: 'Urgency and time pressure',
-    body: '“Your account will be blocked in 30 minutes.” “Act now or this goes to court.” The deadline is the message. Pressure is what stops you pausing to check, and every step after it depends on you not pausing. Real institutions leave you time, and their deadlines arrive in writing.',
-    signal:
-      'Urgency phrases are counted as suspicious keywords. Each one found raises the risk score, and the report lists the phrases it counted.',
+    body: 'The deadline is the message — pressure is what stops you pausing to check, and everything after it depends on you not pausing.',
+    signal: 'Urgency phrases count as suspicious keywords, and each one found raises the score.',
   },
   {
     id: 'authority',
     icon: <IconSeal />,
     title: 'Borrowed authority',
-    body: 'The caller is from your bank’s fraud team, the tax department, the courier, the police. The name does the work — most people argue less with an institution than with a stranger. Nobody legitimate minds being asked to prove who they are, and no real officer objects to being called back.',
-    signal:
-      'Names, phone numbers and payment handles are pulled out of every piece of evidence, so a claim made in a chat can be set beside what the statement and the screenshots say.',
+    body: 'Your bank’s fraud team, the tax office, the courier, the police — the name does the work, and no real officer minds being called back.',
+    signal: 'Names, numbers and handles are extracted from every file, so a claim can be set beside the rest of the case.',
   },
   {
     id: 'otp',
     icon: <IconKey />,
     title: 'The request for an OTP',
-    body: 'A one-time password is the last step of a payment, not proof of identity. Anyone asking you to read one out is asking you to approve something, whatever the words around it say — to verify your account, to cancel a transaction, to confirm it is really you. There is no situation in which another person needs it.',
-    signal:
-      '“OTP” is among the keywords flagged in a chat export or a screenshot, and where it appears on the timeline is usually the moment the case turns.',
+    body: 'A one-time password approves a payment; it never proves who you are, and nobody legitimate has any use for yours.',
+    signal: '“OTP” is among the keywords flagged in a chat export or a screenshot.',
   },
   {
     id: 'fee',
     icon: <IconCoins />,
     title: 'A fee before the money',
-    body: 'A refund, a prize, a loan, a job, a parcel held at customs — each waiting behind one small payment. Verification fee, processing charge, clearance duty. The sum is small on purpose: easy to pay, not worth an argument. It is never the last one.',
-    signal:
-      'A contact number appearing beside a payment handle scores on its own — someone to talk to and somewhere to send money is the shape of this pattern. Larger amounts add more.',
+    body: 'A refund, a prize, a parcel held at customs — each waiting behind one small payment, and it is never the last one.',
+    signal: 'A contact number sitting beside a payment handle scores on its own.',
   },
 ]
 
@@ -85,18 +86,18 @@ const STEPS = [
 export default function Learn() {
   return (
     <div className="learn">
+      {/* A title moment. Centred, given room on both sides, and carrying no
+          content of its own — the page proper starts below it. */}
       <section className="section learn__intro">
         <div className="section__inner">
-          <Reveal className="section__head">
+          <Reveal className="section__head section__head--center learn__title">
             <p className="eyebrow label-caps">How fraud works</p>
             <h1 className="section__title">
               Fraud runs on a <em>script</em>.
             </h1>
             <p className="section__lede lead">
-              Being caught by a scam is not a failure of intelligence. It is what happens when
-              somebody manufactures urgency faster than you can check on it. The same few moves
-              turn up in most of the cases Argus sees, and knowing the shape of one is usually
-              enough to recognise it while it is happening — which is the only moment that helps.
+              Being caught by one is not a failure of intelligence. It is what happens when someone
+              manufactures urgency faster than you can check.
             </p>
           </Reveal>
         </div>
@@ -110,15 +111,24 @@ export default function Learn() {
               Four moves, in roughly this <em>order</em>.
             </h2>
             <p className="section__lede lead">
-              They are rarely used one at a time. Urgency makes room for the rest, and by the time
-              money is mentioned the other three have usually already done their work.
+              They are rarely used one at a time. Urgency makes room for the other three.
             </p>
           </Reveal>
 
-          <div className="card-grid learn__patterns">
+          {/* Urgency leads at full width and the rest follow in a row. The
+              asymmetry is the lede's point made in layout — it is the move
+              that makes room for the others, not one of four equals. */}
+          <div className="learn__moves">
             {PATTERNS.map((pattern, i) => (
-              <Reveal key={pattern.id} delay={i * 0.08} className="card">
-                <span className="card__icon learn__pattern-icon">{pattern.icon}</span>
+              <Reveal
+                key={pattern.id}
+                delay={i * 0.06}
+                className={`card move${i === 0 ? ' move--lead' : ''}`}
+              >
+                <span className="move__head">
+                  <span className="card__icon learn__pattern-icon">{pattern.icon}</span>
+                  <span className="move__num tnum">{String(i + 1).padStart(2, '0')}</span>
+                </span>
                 <h3 className="card__title">{pattern.title}</h3>
                 <p className="card__body">{pattern.body}</p>
                 <div className="card__foot">
@@ -141,8 +151,7 @@ export default function Learn() {
               Five things, in <em>this</em> order.
             </h2>
             <p className="section__lede lead">
-              None of them require you to have worked out what is going on yet. They are worth
-              doing on a suspicion.
+              None of them require you to have worked out what is going on yet.
             </p>
           </Reveal>
 
