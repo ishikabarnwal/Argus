@@ -1,27 +1,38 @@
 /* ARGUS — typography
  *
- * Bricolage Grotesque (variable) display — distinctive, modern editorial
- * Inter (variable)               body    — tall x-height survives small sizes on dark
- * JetBrains Mono (variable)      data    — slashed zero, disambiguated 1/l/I
+ * General Sans (variable)   display — clean, quiet, premium
+ * Inter (variable)          body    — tall x-height survives small sizes on dark
+ * JetBrains Mono (variable) data    — slashed zero, disambiguated 1/l/I
  *
  * The mono choice is functional, not decorative: this app renders account
  * numbers, UPI IDs and phone numbers as primary evidence. A user misreading
  * 0 as O in an account number is a real failure mode in a fraud report.
  *
- * Font files are imported in main.jsx (self-hosted via @fontsource-variable,
- * so there is no CDN dependency at runtime).
+ * Inter and JetBrains Mono are imported in main.jsx from @fontsource-variable.
+ * General Sans has no npm package and is vendored instead — see the @font-face
+ * below and src/assets/fonts/README.md. Nothing loads from a CDN at runtime.
  *
- * Display used to be Fraunces, a serif. The pairing did half the work of
- * telling display and body apart on its own — serif against sans is a
- * difference nobody has to be told about. Bricolage is a grotesque, so that
- * free separation is gone and the presets below have to buy it back: display
- * runs at 650+ against Inter's 400 body, and every display level sets its own
- * optical size. Do not flatten those weights toward Inter's; the two faces
- * both have large x-heights and will start to read as one.
+ * SEPARATION IS BOUGHT WITH WEIGHT, and that is the one thing not to undo.
+ * Display was Fraunces once, a serif, and serif-against-sans is a difference
+ * nobody has to be told about. Two moves later the display face is another
+ * grotesque with a large x-height, sitting much closer to Inter than Fraunces
+ * ever did. What keeps them apart now is the gap between display at 620-700
+ * and Inter's 400 body. Flatten those weights toward each other and the page
+ * goes back to looking like one undifferentiated font at three sizes.
  */
 
+/* One file, whole character set, no unicode-range splitting — see the README
+ * beside it. Upright only; no display type here is ever italic. */
+@font-face {
+  font-family: 'General Sans';
+  src: url('../assets/fonts/general-sans-variable.woff2') format('woff2-variations');
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --font-display: 'Bricolage Grotesque Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-display: 'General Sans', 'Inter Variable', system-ui, sans-serif;
   --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -65,26 +76,23 @@
 }
 
 /* ------------------------------------------------------------------ *
- * Bricolage axis presets                                              *
+ * Display presets                                                     *
  *                                                                     *
- * Three axes, each doing one job:                                     *
+ * General Sans has one axis, wght, so these are plain font-weight     *
+ * declarations — there is no font-variation-settings anywhere in this  *
+ * codebase any more. The previous two display faces each had axes the  *
+ * other did not (Fraunces SOFT/WONK, Bricolage opsz/wdth), and every   *
+ * swap meant hunting those settings through five files. One axis is    *
+ * the reason this section is now four lines instead of twenty.         *
  *                                                                     *
- *   opsz  the character dial, and the direct replacement for the WONK  *
- *         axis this page used to run on. Bricolage sharpens its        *
- *         contrast and closes its spacing as opsz climbs, so each      *
- *         level is set near the size it actually renders at and the    *
- *         hero is pushed past it — that is what makes the hero read as *
- *         a one-time event rather than merely bigger.                  *
- *   wght  separation from Inter. See the note at the top of the file:  *
- *         these are the numbers keeping display and body apart now     *
- *         that the serif is gone.                                      *
- *   wdth  held at 100 throughout. It is here to be explicit that it is *
- *         a deliberate constant, not an axis nobody noticed.           *
+ * The hero is 700 and everything below it 620-650: enough to read as   *
+ * deliberate emphasis rather than a rendering accident, and enough to  *
+ * hold the line against Inter. See the note at the top of the file.    *
  * ------------------------------------------------------------------ */
 
 .display-hero {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 96, 'wght' 700, 'wdth' 100;
+  font-weight: 700;
   font-size: var(--text-h1-fluid);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-display);
@@ -93,7 +101,7 @@
 .display-1,
 h1 {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 72, 'wght' 650, 'wdth' 100;
+  font-weight: 650;
   font-size: var(--text-h1-fluid);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-display);
@@ -102,7 +110,7 @@ h1 {
 .display-2,
 h2 {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 48, 'wght' 650, 'wdth' 100;
+  font-weight: 650;
   font-size: var(--text-h2-fluid);
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-display);
@@ -111,7 +119,7 @@ h2 {
 .display-3,
 h3 {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 32, 'wght' 650, 'wdth' 100;
+  font-weight: 620;
   font-size: var(--text-h3-fluid);
   line-height: var(--leading-snug);
   letter-spacing: var(--tracking-tight);
