@@ -44,6 +44,17 @@
   }
 }
 
+/* The collapsed rail was sized around a 32px control. Once the sign-out
+ * button takes its 44px touch minimum it no longer fits: 3.6rem less the
+ * rail's own 0.5rem of side padding leaves 41.6px of usable width. Coarse
+ * pointers get the difference, and the main column follows automatically
+ * because it is measured from this token. */
+@media (max-width: 900px) and (pointer: coarse) {
+  :root {
+    --sidebar-w: 4.25rem;
+  }
+}
+
 /* Below the rail's own inset the content column is thin, so drop the side
  * padding the pages carry for a full-width layout. */
 @media (max-width: 560px) {

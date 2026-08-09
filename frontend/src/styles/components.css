@@ -113,14 +113,19 @@
  * Form controls                                                       *
  * ------------------------------------------------------------------ */
 
+/* min-height rather than padding alone: a bare input is about 34px at this
+ * font size, which is under the 44px touch minimum on every form in the
+ * product. Text is a step up too — 13px in a field someone types an account
+ * number into was small for the job. */
 .input {
   width: 100%;
-  padding: 0.6rem 0.8rem;
-  border-radius: var(--radius-sm);
+  min-height: 2.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-default);
   background: var(--bg-inset);
   color: var(--text-primary);
-  font-size: var(--text-small);
+  font-size: var(--text-body);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
@@ -146,6 +151,34 @@
   font-size: var(--text-small);
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ *
+ * Touch targets                                                       *
+ *                                                                     *
+ * 44px is the WCAG 2.5.5 enhanced minimum. It is bought on coarse      *
+ * pointers only: with a mouse these controls already clear the 24px    *
+ * AA floor, and inflating them everywhere would leave the topbar and   *
+ * the rail looking like a tablet UI on a desktop.                      *
+ *                                                                     *
+ * Sizing is min-width / min-height rather than width / height, so a    *
+ * control with more in it than its icon still grows past the floor     *
+ * instead of clipping.                                                 *
+ * ------------------------------------------------------------------ */
+
+@media (pointer: coarse) {
+  .theme-toggle,
+  .sidebar__signout {
+    width: auto;
+    height: auto;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  .segmented__btn {
+    min-height: 2.75rem;
+    padding-inline: 1.1rem;
+  }
 }
 
 /* ------------------------------------------------------------------ *
