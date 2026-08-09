@@ -144,7 +144,7 @@ export async function updateCaseStatus(caseId, status) {
 }
 
 /**
- * POST /api/cases/:caseId/report — the case as a PDF, saved to disk.
+ * Fetch a file from the API and save it to disk.
  *
  * The token lives in localStorage rather than a cookie, so the browser cannot
  * be pointed at the URL directly: the request has to carry an Authorization
@@ -154,11 +154,8 @@ export async function updateCaseStatus(caseId, status) {
  * whole file in memory until the tab is closed, which for a page someone
  * leaves open all day is a leak with no upside.
  */
-export async function downloadReport(caseId) {
-  const response = await fetch(`${API_BASE}/cases/${encodeURIComponent(caseId)}/report`, {
-    method: 'POST',
-    headers: authHeaders(),
-  })
+async function downloadFile(path, filename) {
+  const response = await fetch(`${API_BASE}${path}`, { method: 'POST', headers: authHeaders() })
   if (!response.ok) throw await errorFrom(response)
 
   const blob = await response.blob()
@@ -166,12 +163,31 @@ export async function downloadReport(caseId) {
 
   const link = document.createElement('a')
   link.href = url
-  link.download = `argus-${caseId}.pdf`
+  link.download = filename
   document.body.appendChild(link)
   link.click()
   link.remove()
 
   URL.revokeObjectURL(url)
+}
+
+/** POST /api/cases/:caseId/report — the case as a PDF. */
+export function downloadReport(caseId) {
+  return downloadFile(`/cases/${encodeURIComponent(caseId)}/report`, `argus-${caseId}.pdf`)
+}
+
+/**
+ * POST /api/cases/:caseId/bundle — the report and every stored original, as
+ * a ZIP.
+ *
+ * Slower than the report: the API fetches each original back from storage
+ * before it can answer. Callers should say so while they wait.
+ */
+export function downloadBundle(caseId) {
+  return downloadFile(
+    `/cases/${encodeURIComponent(caseId)}/bundle`,
+    `argus-${caseId}-bundle.zip`,
+  )
 }
 
 /* ---- evidence ----------------------------------------------------- */

@@ -2,6 +2,7 @@ const express = require('express');
 const Case = require('../models/Case');
 const Evidence = require('../models/Evidence');
 const { canRead } = require('../lib/access');
+const { buildCaseBundle } = require('../lib/bundle');
 const { isStatus, rejectionReason } = require('../lib/caseStatus');
 const { renderCaseReport } = require('../lib/report');
 const { requireAuth, requireRole } = require('../middleware/auth');
@@ -114,6 +115,43 @@ router.post('/:caseId/report', requireAuth, async (req, res) => {
   res.setHeader('Content-Length', pdf.length);
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send(pdf);
+});
+
+/**
+ * POST /api/cases/:caseId/bundle — the report and every stored original, as
+ * a ZIP.
+ *
+ * Same access as the report, and for the same reason: this is a way of
+ * reading a case, not a new privilege. Investigators get it too.
+ *
+ * Slower than the report — it fetches each original back from storage — so
+ * the frontend says so while it waits. A case whose evidence was all pasted
+ * text has no originals and still gets a valid ZIP with the report in it.
+ */
+router.post('/:caseId/bundle', requireAuth, async (req, res) => {
+  const { caseId } = req.params;
+  const caseDoc = await Case.findOne({ caseId });
+
+  if (!caseDoc || !canRead(caseDoc, req.user)) {
+    return res.status(404).json({ error: 'No case with that ID' });
+  }
+
+  const evidence = await Evidence.find({ caseId }).sort({ uploadedAt: 1 });
+  const { zip, missing } = await buildCaseBundle({ caseDoc, evidence });
+
+  // Worth a line in the log: a file recorded on the case that storage would
+  // not give back is a real problem, and the only other trace of it is a note
+  // inside a ZIP nobody may open.
+  if (missing.length > 0) {
+    console.warn(`bundle ${caseId}: ${missing.length} original(s) could not be fetched`);
+  }
+
+  const safeCaseId = caseId.replace(/[^A-Za-z0-9._-]/g, '_');
+
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Length', zip.length);
+  res.setHeader('Content-Disposition', `attachment; filename="argus-${safeCaseId}-bundle.zip"`);
+  res.send(zip);
 });
 
 module.exports = router;

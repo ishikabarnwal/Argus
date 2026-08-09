@@ -168,6 +168,14 @@
   margin-top: 0.8rem;
 }
 
+/* Explains a wait rather than reporting a problem, so plain secondary text —
+ * caution orange here would say something had gone wrong. */
+.caseactions__note {
+  margin-top: 0.8rem;
+  max-width: 34rem;
+  text-wrap: pretty;
+}
+
 /* ---- missing evidence ---------------------------------------------- */
 
 /* Gap violet throughout: these say something is absent, which is exactly what

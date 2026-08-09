@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import CaseGraph from '../components/CaseGraph'
 import { IconChat, IconGap, IconImage, IconStatement } from '../components/Icons'
 import StatusBadge from '../components/StatusBadge'
-import { downloadReport, fetchCase, updateCaseStatus } from '../lib/api'
+import { downloadBundle, downloadReport, fetchCase, updateCaseStatus } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { STATUSES } from '../lib/caseStatus'
 import { riskColorVar } from '../lib/risk'
@@ -184,25 +184,28 @@ function CaseStatus({ caseId, status, onChange }) {
 }
 
 /**
- * The two things worth doing once a case has been read.
+ * What is worth doing once a case has been read.
  *
  * Filing leads, because it is the action that actually helps the victim; the
- * report exists to be taken along with it. Both were dead spans in the
- * homepage mock before there was anything behind them.
+ * downloads exist to be taken along with it. All of these were dead spans in
+ * the homepage mock before there was anything behind them.
+ *
+ * One `busy` value rather than a flag per button: only one download can be in
+ * flight, and two booleans would allow a state where both claim to be running.
  */
 function NextAction({ caseId }) {
-  const [exporting, setExporting] = useState(false)
+  const [busy, setBusy] = useState(null)
   const [error, setError] = useState(null)
 
-  async function handleExport() {
-    setExporting(true)
+  async function run(job, download) {
+    setBusy(job)
     setError(null)
     try {
-      await downloadReport(caseId)
+      await download(caseId)
     } catch (err) {
       setError(err.message)
     } finally {
-      setExporting(false)
+      setBusy(null)
     }
   }
 
@@ -222,12 +225,32 @@ function NextAction({ caseId }) {
         <button
           className="btn btn--outline"
           type="button"
-          onClick={handleExport}
-          disabled={exporting}
+          onClick={() => run('report', downloadReport)}
+          disabled={busy !== null}
         >
-          {exporting ? 'Preparing PDF…' : 'Export PDF'}
+          {busy === 'report' ? 'Preparing PDF…' : 'Export PDF'}
+        </button>
+
+        {/* Slower than the PDF — the API fetches every original back from
+            storage first — so this says "collecting" rather than the
+            "preparing" the report uses, and the note below explains the wait
+            rather than leaving a disabled button to be stared at. */}
+        <button
+          className="btn btn--outline"
+          type="button"
+          onClick={() => run('bundle', downloadBundle)}
+          disabled={busy !== null}
+        >
+          {busy === 'bundle' ? 'Collecting files…' : 'Download everything'}
         </button>
       </div>
+
+      {busy === 'bundle' && (
+        <p className="casestate caseactions__note" role="status">
+          Building a ZIP of the report and every original file on this case. This takes
+          longer than the report on its own.
+        </p>
+      )}
 
       {/* Caution, not alert: a download that failed is a problem, not a
           fraud finding. */}
